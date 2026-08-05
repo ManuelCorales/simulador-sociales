@@ -1,0 +1,453 @@
+<meta charset="utf-8">
+<title>DER — Juego de rol tipo REIGNS</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #8b93a3;
+    --accent: #7aa2f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    background: var(--panel); display: flex; align-items: center; gap: 18px;
+    flex-wrap: wrap;
+  }
+  h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  .controls { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+  button {
+    background: #21252e; color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 11px; cursor: pointer; font-size: 13px;
+  }
+  button:hover { background: #2b303b; border-color: #3a4150; }
+  button.on { background: var(--accent); color: #0f1115; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--muted); font-size: 12px; }
+  #stage { flex: 1; overflow: hidden; position: relative; cursor: grab; }
+  #stage.dragging { cursor: grabbing; }
+  #canvas { transform-origin: 0 0; position: absolute; top: 0; left: 0; padding: 24px; }
+  #canvas svg { max-width: none !important; height: auto !important; }
+  .legend {
+    position: absolute; bottom: 14px; left: 14px; background: rgba(23,26,33,.94);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; color: var(--muted); max-width: 380px; line-height: 1.7;
+  }
+  .legend b { color: var(--text); font-weight: 600; }
+  #loading { padding: 40px; color: var(--muted); }
+</style>
+
+<header>
+  <h1>DER — Juego de rol tipo REIGNS</h1>
+  <span class="hint">Arrastrá para mover · rueda del mouse para zoom</span>
+  <div class="controls">
+    <button id="btn-full" class="on">Completo</button>
+    <button id="btn-content">Solo contenido</button>
+    <span style="width:10px"></span>
+    <button id="zoom-out">−</button>
+    <button id="zoom-in">+</button>
+    <button id="reset">Ajustar</button>
+  </div>
+</header>
+
+<div id="stage">
+  <div id="canvas"><div id="loading">Renderizando diagrama…</div></div>
+  <div class="legend">
+    <b>Contenido (autoría):</b> stat, fase, historia, evento, condicion, respuesta, efecto, minijuego, final.<br>
+    <b>Runtime (opcional):</b> partida* — el progreso no se persiste; estas tablas solo sirven para analytics.<br>
+    <b>Notación:</b> ||—o{ = uno a muchos (opcional) · ||—|{ = uno a muchos (al menos uno).
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+const SOURCE = String.raw`
+erDiagram
+
+    CONFIGURACION {
+        text clave PK
+        text valor
+        text descripcion
+    }
+
+    STAT {
+        int id PK
+        text codigo UK
+        text nombre
+        text descripcion
+        int valor_inicial
+        int valor_min
+        int valor_max
+        bool clampea
+        bool visible
+        int orden
+    }
+
+    FASE {
+        int id PK
+        text codigo UK "ingresante|intermedio|avanzado"
+        text nombre
+        int ronda_desde
+        int ronda_hasta
+        int minijuego_despues_de "el minijuego NO consume ronda"
+        int orden
+    }
+
+    HISTORIA {
+        int id PK
+        text codigo UK
+        text nombre
+        text descripcion
+        int historia_padre_id FK "subhistorias"
+        enum modo_secuencia "estricta|diferida|libre"
+        int gap_min
+        int gap_max
+        int peso
+        bool exclusiva
+        text grupo_exclusion
+        bool activa
+    }
+
+    HISTORIA_EVENTO {
+        int id PK
+        int historia_id FK
+        int evento_id FK
+        int orden
+        bool obligatorio
+    }
+
+    EVENTO {
+        int id PK
+        text codigo UK
+        enum tipo "normal|aviso|abandono"
+        text titulo_m
+        text titulo_f
+        text titulo_nb
+        text texto_m
+        text texto_f
+        text texto_nb
+        text imagen_url
+        text personaje
+        int peso "probabilidad intrinseca"
+        int fase_id FK
+        int ronda_min
+        int ronda_max
+        bool es_unico
+        int cooldown_rondas
+        bool termina_partida
+        bool activo
+        text notas_autor
+    }
+
+    CONDICION_GRUPO {
+        int id PK
+        int evento_id FK "excluyente con final_id"
+        int final_id FK
+        enum operador "AND|OR"
+        int orden
+    }
+
+    CONDICION {
+        int id PK
+        int grupo_id FK
+        enum tipo "stat|fase|ronda|efecto_aplicado|respuesta_elegida|evento_visto|historia_estado|flag"
+        bool negada
+        int stat_id FK
+        int evento_ref_id FK
+        int respuesta_ref_id FK
+        int efecto_ref_id FK
+        int historia_ref_id FK
+        int fase_ref_id FK
+        text flag_clave
+        enum operador "comparador"
+        numeric valor_num
+        numeric valor_num2
+        text valor_texto
+        int orden
+    }
+
+    RESPUESTA {
+        int id PK
+        int evento_id FK
+        int orden "1 a 4"
+        text texto_m
+        text texto_f
+        text texto_nb
+        enum gesto "izq|der|arriba|abajo"
+        bool muestra_hint
+    }
+
+    EFECTO {
+        int id PK
+        int respuesta_id FK
+        int peso "peso relativo en la respuesta"
+        bool es_default
+        text texto_resultado_m
+        text texto_resultado_f
+        text texto_resultado_nb
+        text codigo
+    }
+
+    EFECTO_STAT {
+        int id PK
+        int efecto_id FK
+        int stat_id FK
+        enum operacion "sumar|fijar|multiplicar"
+        numeric valor
+        numeric valor_min
+        numeric valor_max
+    }
+
+    EFECTO_FLAG {
+        int id PK
+        int efecto_id FK
+        text clave
+        text valor
+    }
+
+    EFECTO_DISPARADOR {
+        int id PK
+        int efecto_id FK
+        int evento_destino_id FK "evento tipo aviso"
+        int demora_min
+        int demora_max
+        bool forzado
+        int prioridad
+    }
+
+    MINIJUEGO {
+        int id PK
+        text codigo UK
+        text nombre
+        text descripcion
+        text instrucciones_m
+        text instrucciones_f
+        text instrucciones_nb
+        jsonb config
+        int peso
+        bool activo
+    }
+
+    MINIJUEGO_FASE {
+        int minijuego_id PK
+        int fase_id PK
+        int peso
+    }
+
+    MINIJUEGO_RESULTADO {
+        int id PK
+        int minijuego_id FK
+        text codigo "exito|parcial|fallo"
+        numeric puntaje_min
+        numeric puntaje_max
+        text texto_m
+        text texto_f
+        text texto_nb
+    }
+
+    MINIJUEGO_RESULTADO_STAT {
+        int id PK
+        int resultado_id FK
+        int stat_id FK
+        enum operacion
+        numeric valor
+    }
+
+    FINAL {
+        int id PK
+        text codigo UK
+        text titulo_m
+        text titulo_f
+        text titulo_nb
+        text texto_m
+        text texto_f
+        text texto_nb
+        text imagen_url
+        int prioridad
+        bool es_default
+        bool requiere_abandono
+    }
+
+    PARTIDA {
+        uuid id PK
+        text jugador_nombre
+        enum jugador_genero "masculino|femenino|no_binario"
+        jsonb datos_extra
+        int ronda_actual
+        bool terminada
+        bool abandono
+        int final_id FK
+        text version_contenido
+        timestamptz creada_en
+        timestamptz terminada_en
+    }
+
+    PARTIDA_STAT {
+        uuid partida_id PK
+        int stat_id PK
+        numeric valor
+    }
+
+    PARTIDA_LOG {
+        bigint id PK
+        uuid partida_id FK
+        int ronda
+        int evento_id FK
+        int respuesta_id FK
+        int efecto_id FK
+        int minijuego_id FK
+        numeric puntaje
+        jsonb snapshot_stats
+        timestamptz ocurrido_en
+    }
+
+    PARTIDA_MINIJUEGO {
+        uuid partida_id PK
+        int fase_id PK
+        int minijuego_id FK
+    }
+
+    HISTORIA ||--o{ HISTORIA : "tiene subhistorias"
+    HISTORIA ||--o{ HISTORIA_EVENTO : "encadena"
+    EVENTO ||--o{ HISTORIA_EVENTO : "pertenece a"
+    FASE ||--o{ EVENTO : "acota"
+    EVENTO ||--o{ CONDICION_GRUPO : "se muestra si"
+    FINAL ||--o{ CONDICION_GRUPO : "se elige si"
+    CONDICION_GRUPO ||--|{ CONDICION : "agrupa"
+    STAT ||--o{ CONDICION : "evalua"
+    EVENTO ||--o{ CONDICION : "referenciado por"
+    HISTORIA ||--o{ CONDICION : "referenciada por"
+    FASE ||--o{ CONDICION : "referenciada por"
+    RESPUESTA ||--o{ CONDICION : "referenciada por"
+    EFECTO ||--o{ CONDICION : "referenciado por"
+    EVENTO ||--|{ RESPUESTA : "ofrece 1 a 4"
+    RESPUESTA ||--|{ EFECTO : "resuelve en"
+    EFECTO ||--o{ EFECTO_STAT : "modifica"
+    STAT ||--o{ EFECTO_STAT : "es modificado en"
+    EFECTO ||--o{ EFECTO_FLAG : "setea"
+    EFECTO ||--o{ EFECTO_DISPARADOR : "programa aviso"
+    EVENTO ||--o{ EFECTO_DISPARADOR : "es el aviso disparado"
+    MINIJUEGO ||--o{ MINIJUEGO_FASE : "disponible en"
+    FASE ||--o{ MINIJUEGO_FASE : "admite"
+    MINIJUEGO ||--|{ MINIJUEGO_RESULTADO : "termina en"
+    MINIJUEGO_RESULTADO ||--o{ MINIJUEGO_RESULTADO_STAT : "aplica"
+    STAT ||--o{ MINIJUEGO_RESULTADO_STAT : "es modificado en"
+    PARTIDA ||--o{ PARTIDA_STAT : "estado de"
+    STAT ||--o{ PARTIDA_STAT : "medido en"
+    PARTIDA ||--o{ PARTIDA_LOG : "registra"
+    EVENTO ||--o{ PARTIDA_LOG : "aparece en"
+    RESPUESTA ||--o{ PARTIDA_LOG : "elegida en"
+    EFECTO ||--o{ PARTIDA_LOG : "aplicado en"
+    MINIJUEGO ||--o{ PARTIDA_LOG : "jugado en"
+    PARTIDA ||--o{ PARTIDA_MINIJUEGO : "sortea 3"
+    MINIJUEGO ||--o{ PARTIDA_MINIJUEGO : "asignado en"
+    FASE ||--o{ PARTIDA_MINIJUEGO : "ubica"
+    FINAL ||--o{ PARTIDA : "cierra"
+`;
+
+// Genera una versión sin las tablas de runtime.
+function soloContenido(src) {
+  const lines = src.split("\n");
+  const out = [];
+  let skipDepth = 0, skipping = false;
+  for (const line of lines) {
+    const t = line.trim();
+    if (skipping) {
+      if (t.includes("{")) skipDepth++;
+      if (t.includes("}")) { skipDepth--; if (skipDepth <= 0) skipping = false; }
+      continue;
+    }
+    const entityStart = /^(PARTIDA\w*)\s*\{/.test(t);
+    if (entityStart) { skipping = true; skipDepth = 1; continue; }
+    if (/^\w+\s+\|\|--/.test(t) && /PARTIDA/.test(t)) continue;
+    out.push(line);
+  }
+  return out.join("\n");
+}
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: "dark",
+  er: { layoutDirection: "TB", entityPadding: 12, minEntityWidth: 130, useMaxWidth: false },
+  themeVariables: { fontSize: "13px", primaryColor: "#1d2230", lineColor: "#7aa2f7" }
+});
+
+const stage = document.getElementById("stage");
+const canvas = document.getElementById("canvas");
+let scale = 1, tx = 0, ty = 0;
+
+function apply() {
+  canvas.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+}
+
+async function render(src) {
+  canvas.innerHTML = '<div id="loading">Renderizando diagrama…</div>';
+  const { svg } = await mermaid.render("der-" + Date.now(), src);
+  canvas.innerHTML = svg;
+  fit();
+}
+
+function fit() {
+  const svg = canvas.querySelector("svg");
+  if (!svg) return;
+  const bb = svg.getBoundingClientRect();
+  const w = svg.viewBox.baseVal.width || bb.width;
+  const h = svg.viewBox.baseVal.height || bb.height;
+  scale = Math.min(stage.clientWidth / (w + 60), stage.clientHeight / (h + 60), 1);
+  tx = (stage.clientWidth - w * scale) / 2;
+  ty = 20;
+  apply();
+}
+
+// Pan
+let dragging = false, sx = 0, sy = 0;
+stage.addEventListener("mousedown", e => {
+  dragging = true; sx = e.clientX - tx; sy = e.clientY - ty;
+  stage.classList.add("dragging");
+});
+window.addEventListener("mousemove", e => {
+  if (!dragging) return;
+  tx = e.clientX - sx; ty = e.clientY - sy; apply();
+});
+window.addEventListener("mouseup", () => { dragging = false; stage.classList.remove("dragging"); });
+
+// Zoom con rueda, centrado en el cursor
+stage.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = stage.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  const ns = Math.min(Math.max(scale * factor, 0.08), 6);
+  tx = mx - (mx - tx) * (ns / scale);
+  ty = my - (my - ty) * (ns / scale);
+  scale = ns; apply();
+}, { passive: false });
+
+function zoom(f) {
+  const cx = stage.clientWidth / 2, cy = stage.clientHeight / 2;
+  const ns = Math.min(Math.max(scale * f, 0.08), 6);
+  tx = cx - (cx - tx) * (ns / scale);
+  ty = cy - (cy - ty) * (ns / scale);
+  scale = ns; apply();
+}
+
+document.getElementById("zoom-in").onclick = () => zoom(1.25);
+document.getElementById("zoom-out").onclick = () => zoom(0.8);
+document.getElementById("reset").onclick = fit;
+
+const btnFull = document.getElementById("btn-full");
+const btnContent = document.getElementById("btn-content");
+btnFull.onclick = () => {
+  btnFull.classList.add("on"); btnContent.classList.remove("on"); render(SOURCE);
+};
+btnContent.onclick = () => {
+  btnContent.classList.add("on"); btnFull.classList.remove("on"); render(soloContenido(SOURCE));
+};
+
+render(SOURCE);
+</script>

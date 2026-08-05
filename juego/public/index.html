@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>La Carrera</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:,">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ INICIO ============ -->
+  <section id="pantalla-inicio" class="pantalla activa">
+    <div class="inicio-box">
+      <h1>LA CARRERA</h1>
+      <p class="sub">Dieciséis decisiones entre el ingreso y el título.</p>
+
+      <label class="campo">
+        <span>¿Cómo te llamás?</span>
+        <input id="in-nombre" type="text" maxlength="24" placeholder="Tu nombre" autocomplete="off">
+      </label>
+
+      <div class="campo">
+        <span>Género</span>
+        <div class="opciones" id="in-genero"></div>
+      </div>
+
+      <div class="campo">
+        <span>¿Por qué te anotaste?</span>
+        <div class="opciones" id="in-motivo">
+          <button type="button" data-valor="vocacion">Por vocación</button>
+          <button type="button" data-valor="laboral">Por salida laboral</button>
+          <button type="button" data-valor="familia">Me mandaron</button>
+          <button type="button" data-valor="nose">Ni idea</button>
+        </div>
+      </div>
+
+      <button id="btn-empezar" class="primario">Empezar</button>
+      <p class="aviso-progreso">El progreso vive solo en esta pestaña: si la cerrás, empezás de nuevo.</p>
+    </div>
+  </section>
+
+  <!-- ============ JUEGO ============ -->
+  <section id="pantalla-juego" class="pantalla">
+    <header id="hud">
+      <div id="stats"></div>
+      <div id="progreso">
+        <span id="fase-nombre"></span>
+        <div class="barra-rondas"><div id="barra-rondas-fill"></div></div>
+        <span id="ronda-label"></span>
+      </div>
+    </header>
+
+    <main id="escenario">
+      <!-- carta de evento -->
+      <div id="carta" class="carta">
+        <div class="ilustracion" id="carta-ilu"></div>
+        <div class="carta-personaje" id="carta-personaje"></div>
+        <h2 id="carta-titulo"></h2>
+        <p id="carta-texto"></p>
+        <div class="hint-swipe" id="hint-izq"></div>
+        <div class="hint-swipe" id="hint-der"></div>
+      </div>
+
+      <!-- overlay de resultado -->
+      <div id="resultado" class="carta resultado oculto">
+        <p id="resultado-texto"></p>
+        <div id="resultado-deltas" class="deltas"></div>
+        <button id="btn-continuar" class="primario">Seguir</button>
+      </div>
+
+      <!-- minijuego -->
+      <div id="minijuego" class="carta minijuego oculto">
+        <div class="mj-tag">Minijuego</div>
+        <div class="ilustracion chica" id="mj-ilu"></div>
+        <h2 id="mj-nombre"></h2>
+        <p id="mj-instrucciones"></p>
+        <div id="mj-area"></div>
+        <div id="mj-estado"></div>
+        <button id="mj-empezar" class="primario">Jugar</button>
+      </div>
+    </main>
+
+    <footer id="respuestas"></footer>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section id="pantalla-final" class="pantalla">
+    <div class="final-box">
+      <div class="ilustracion grande" id="final-ilu"></div>
+      <div class="final-sello" id="final-sello"></div>
+      <h1 id="final-titulo"></h1>
+      <p id="final-texto"></p>
+      <div id="final-stats" class="final-stats"></div>
+      <details class="resumen">
+        <summary>Ver la carrera completa</summary>
+        <ol id="final-resumen"></ol>
+      </details>
+      <button id="btn-reiniciar" class="primario">Otra vez</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="ilustraciones.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

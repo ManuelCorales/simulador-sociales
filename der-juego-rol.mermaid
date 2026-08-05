@@ -1,0 +1,303 @@
+erDiagram
+
+    %% ============ CONFIGURACIÓN Y CATÁLOGOS ============
+
+    CONFIGURACION {
+        text clave PK
+        text valor
+        text descripcion
+    }
+
+    STAT {
+        int id PK
+        text codigo UK
+        text nombre
+        text descripcion
+        int valor_inicial
+        int valor_min
+        int valor_max
+        bool clampea
+        bool visible
+        int orden
+    }
+
+    FASE {
+        int id PK
+        text codigo UK "ingresante|intermedio|avanzado"
+        text nombre
+        int ronda_desde
+        int ronda_hasta
+        int minijuego_despues_de "el minijuego NO consume ronda"
+        int orden
+    }
+
+    %% ============ HISTORIAS ============
+
+    HISTORIA {
+        int id PK
+        text codigo UK
+        text nombre
+        text descripcion
+        int historia_padre_id FK "subhistorias"
+        enum modo_secuencia "estricta|diferida|libre"
+        int gap_min
+        int gap_max
+        int peso
+        bool exclusiva
+        text grupo_exclusion
+        bool activa
+    }
+
+    HISTORIA_EVENTO {
+        int id PK
+        int historia_id FK
+        int evento_id FK
+        int orden
+        bool obligatorio
+    }
+
+    %% ============ EVENTOS ============
+
+    EVENTO {
+        int id PK
+        text codigo UK
+        enum tipo "normal|aviso|abandono"
+        text titulo_m
+        text titulo_f
+        text titulo_nb
+        text texto_m
+        text texto_f
+        text texto_nb
+        text imagen_url
+        text personaje
+        int peso "probabilidad intrinseca en la bolsa"
+        int fase_id FK
+        int ronda_min
+        int ronda_max
+        bool es_unico
+        int cooldown_rondas
+        bool termina_partida
+        bool activo
+        text notas_autor
+    }
+
+    %% ============ CONDICIONES ============
+
+    CONDICION_GRUPO {
+        int id PK
+        int evento_id FK "excluyente con final_id"
+        int final_id FK
+        enum operador "AND|OR"
+        int orden
+    }
+
+    CONDICION {
+        int id PK
+        int grupo_id FK
+        enum tipo "stat|fase|ronda|efecto_aplicado|respuesta_elegida|evento_visto|historia_estado|flag"
+        bool negada
+        int stat_id FK
+        int evento_ref_id FK
+        int respuesta_ref_id FK
+        int efecto_ref_id FK
+        int historia_ref_id FK
+        int fase_ref_id FK
+        text flag_clave
+        enum operador "= != gt lt gte lte between"
+        numeric valor_num
+        numeric valor_num2
+        text valor_texto
+        int orden
+    }
+
+    %% ============ RESPUESTAS Y EFECTOS ============
+
+    RESPUESTA {
+        int id PK
+        int evento_id FK
+        int orden "1 a 4"
+        text texto_m
+        text texto_f
+        text texto_nb
+        enum gesto "izq|der|arriba|abajo"
+        bool muestra_hint
+    }
+
+    EFECTO {
+        int id PK
+        int respuesta_id FK
+        int peso "peso relativo dentro de la respuesta"
+        bool es_default
+        text texto_resultado_m
+        text texto_resultado_f
+        text texto_resultado_nb
+        text codigo
+    }
+
+    EFECTO_STAT {
+        int id PK
+        int efecto_id FK
+        int stat_id FK
+        enum operacion "sumar|fijar|multiplicar"
+        numeric valor
+        numeric valor_min
+        numeric valor_max
+    }
+
+    EFECTO_FLAG {
+        int id PK
+        int efecto_id FK
+        text clave
+        text valor
+    }
+
+    EFECTO_DISPARADOR {
+        int id PK
+        int efecto_id FK
+        int evento_destino_id FK "evento tipo aviso"
+        int demora_min
+        int demora_max
+        bool forzado
+        int prioridad
+    }
+
+    %% ============ MINIJUEGOS ============
+
+    MINIJUEGO {
+        int id PK
+        text codigo UK
+        text nombre
+        text descripcion
+        text instrucciones_m
+        text instrucciones_f
+        text instrucciones_nb
+        jsonb config
+        int peso
+        bool activo
+    }
+
+    MINIJUEGO_FASE {
+        int minijuego_id PK_FK
+        int fase_id PK_FK
+        int peso
+    }
+
+    MINIJUEGO_RESULTADO {
+        int id PK
+        int minijuego_id FK
+        text codigo "exito|parcial|fallo"
+        numeric puntaje_min
+        numeric puntaje_max
+        text texto_m
+        text texto_f
+        text texto_nb
+    }
+
+    MINIJUEGO_RESULTADO_STAT {
+        int id PK
+        int resultado_id FK
+        int stat_id FK
+        enum operacion
+        numeric valor
+    }
+
+    %% ============ FINALES ============
+
+    FINAL {
+        int id PK
+        text codigo UK
+        text titulo_m
+        text titulo_f
+        text titulo_nb
+        text texto_m
+        text texto_f
+        text texto_nb
+        text imagen_url
+        int prioridad
+        bool es_default
+        bool requiere_abandono
+    }
+
+    %% ============ RUNTIME / ANALYTICS (opcional) ============
+
+    PARTIDA {
+        uuid id PK
+        text jugador_nombre
+        enum jugador_genero "masculino|femenino|no_binario"
+        jsonb datos_extra
+        int ronda_actual
+        bool terminada
+        bool abandono
+        int final_id FK
+        text version_contenido
+        timestamptz creada_en
+        timestamptz terminada_en
+    }
+
+    PARTIDA_STAT {
+        uuid partida_id PK_FK
+        int stat_id PK_FK
+        numeric valor
+    }
+
+    PARTIDA_LOG {
+        bigint id PK
+        uuid partida_id FK
+        int ronda
+        int evento_id FK
+        int respuesta_id FK
+        int efecto_id FK
+        int minijuego_id FK
+        numeric puntaje
+        jsonb snapshot_stats
+        timestamptz ocurrido_en
+    }
+
+    PARTIDA_MINIJUEGO {
+        uuid partida_id PK_FK
+        int fase_id PK_FK
+        int minijuego_id FK
+    }
+
+    %% ============ RELACIONES ============
+
+    HISTORIA           ||--o{ HISTORIA           : "tiene subhistorias"
+    HISTORIA           ||--o{ HISTORIA_EVENTO    : "encadena"
+    EVENTO             ||--o{ HISTORIA_EVENTO    : "pertenece a"
+    FASE               ||--o{ EVENTO             : "acota"
+
+    EVENTO             ||--o{ CONDICION_GRUPO    : "se muestra si"
+    FINAL              ||--o{ CONDICION_GRUPO    : "se elige si"
+    CONDICION_GRUPO    ||--|{ CONDICION          : "agrupa"
+    STAT               ||--o{ CONDICION          : "evalua"
+    EVENTO             ||--o{ CONDICION          : "referenciado por"
+    HISTORIA           ||--o{ CONDICION          : "referenciada por"
+    FASE               ||--o{ CONDICION          : "referenciada por"
+    RESPUESTA          ||--o{ CONDICION          : "referenciada por"
+    EFECTO             ||--o{ CONDICION          : "referenciado por"
+
+    EVENTO             ||--|{ RESPUESTA          : "ofrece 1 a 4"
+    RESPUESTA          ||--|{ EFECTO             : "resuelve en"
+    EFECTO             ||--o{ EFECTO_STAT        : "modifica"
+    STAT               ||--o{ EFECTO_STAT        : "es modificado en"
+    EFECTO             ||--o{ EFECTO_FLAG        : "setea"
+    EFECTO             ||--o{ EFECTO_DISPARADOR  : "programa"
+    EVENTO             ||--o{ EFECTO_DISPARADOR  : "es el aviso disparado"
+
+    MINIJUEGO          ||--o{ MINIJUEGO_FASE     : "disponible en"
+    FASE               ||--o{ MINIJUEGO_FASE     : "admite"
+    MINIJUEGO          ||--|{ MINIJUEGO_RESULTADO : "termina en"
+    MINIJUEGO_RESULTADO ||--o{ MINIJUEGO_RESULTADO_STAT : "aplica"
+    STAT               ||--o{ MINIJUEGO_RESULTADO_STAT : "es modificado en"
+
+    PARTIDA            ||--o{ PARTIDA_STAT       : "estado de"
+    STAT               ||--o{ PARTIDA_STAT       : "medido en"
+    PARTIDA            ||--o{ PARTIDA_LOG        : "registra"
+    EVENTO             ||--o{ PARTIDA_LOG        : "aparece en"
+    RESPUESTA          ||--o{ PARTIDA_LOG        : "elegida en"
+    EFECTO             ||--o{ PARTIDA_LOG        : "aplicado en"
+    MINIJUEGO          ||--o{ PARTIDA_LOG        : "jugado en"
+    PARTIDA            ||--o{ PARTIDA_MINIJUEGO  : "sortea 3"
+    MINIJUEGO          ||--o{ PARTIDA_MINIJUEGO  : "asignado en"
+    FASE               ||--o{ PARTIDA_MINIJUEGO  : "ubica"
+    FINAL              ||--o{ PARTIDA            : "cierra"

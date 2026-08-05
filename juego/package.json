@@ -1,0 +1,22 @@
+{
+  "name": "juego-reigns-carrera",
+  "version": "0.1.0",
+  "description": "Juego de rol tipo REIGNS ambientado en una carrera universitaria. SQLite + Express + front vanilla.",
+  "main": "server.js",
+  "scripts": {
+    "seed": "node --no-warnings db/seed.js",
+    "start": "node --no-warnings server.js",
+    "dev": "node --no-warnings --watch server.js",
+    "test:run": "node --no-warnings test/simular.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "MIT"
+}
