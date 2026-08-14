@@ -225,7 +225,9 @@ CREATE TABLE minijuego (
     nombre           TEXT NOT NULL,
     descripcion      TEXT,
     ilustracion      TEXT,
-    mecanica         TEXT NOT NULL CHECK (mecanica IN ('barra_timing','click_rapido','memoria')),
+    mecanica         TEXT NOT NULL CHECK (mecanica IN (
+                       'tres_en_linea','memotest','traducir','sopa',
+                       'crucigrama','apellidos','conectar','molinete')),
     instrucciones_m  TEXT,
     instrucciones_f  TEXT,
     instrucciones_nb TEXT,

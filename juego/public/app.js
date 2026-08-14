@@ -31,6 +31,7 @@ const mostrarPantalla = (id) => {
 // =====================================================================
 let genero = 'nb';
 let motivo = 'nose';
+let nombreJugador = '';
 
 async function initInicio() {
   META = await api('/api/meta');
@@ -54,12 +55,18 @@ async function initInicio() {
 
   $('#btn-empezar').addEventListener('click', empezar);
   $('#in-nombre').addEventListener('keydown', (e) => { if (e.key === 'Enter') empezar(); });
-  $('#btn-reiniciar').addEventListener('click', () => { mostrarPantalla('pantalla-inicio'); });
+  $('#btn-reiniciar').addEventListener('click', () => {
+    faseActual = null;
+    document.body.dataset.fase = 'ingresante';
+    mostrarPantalla('pantalla-inicio');
+  });
   $('#btn-continuar').addEventListener('click', continuar);
+  $('#btn-compartir').addEventListener('click', exportarImagen);
 }
 
 async function empezar() {
   $('#btn-empezar').disabled = true;
+  nombreJugador = $('#in-nombre').value.trim();
   try {
     const r = await api('/api/partida', {
       method: 'POST',
@@ -79,25 +86,28 @@ async function empezar() {
 // =====================================================================
 // HUD
 // =====================================================================
+// Sin números: la barra es la única lectura. El valor exacto queda en el
+// tooltip, para no convertir el HUD en una planilla.
 function pintarStats(stats) {
   const cont = $('#stats');
   if (!cont.children.length) {
     cont.innerHTML = stats.map((s) => `
-      <div class="stat" data-cod="${s.codigo}" title="${s.nombre}">
-        <div class="ico" style="color:${s.color}">${s.icono || '•'}</div>
+      <div class="stat" data-cod="${s.codigo}">
+        <div class="ico" style="color:${s.color}">${icono(s.icono, s.codigo)}</div>
         <div class="barra"><i style="background:${s.color}"></i></div>
-        <div class="val"></div>
       </div>`).join('');
   }
   stats.forEach((s) => {
     const el = cont.querySelector(`.stat[data-cod="${s.codigo}"]`);
     const pct = ((s.valor - s.min) / (s.max - s.min)) * 100;
     el.querySelector('i').style.width = Math.max(0, Math.min(100, pct)) + '%';
-    el.querySelector('.val').textContent = s.valor;
+    el.title = `${s.nombre}: ${s.valor}`;
     if (statsPrevios[s.codigo] !== undefined && statsPrevios[s.codigo] !== s.valor) {
-      el.classList.remove('pulso');
+      const subio = s.valor > statsPrevios[s.codigo];
+      el.classList.remove('pulso', 'baja');
       void el.offsetWidth;
       el.classList.add('pulso');
+      if (!subio) el.classList.add('baja');
     }
     statsPrevios[s.codigo] = s.valor;
   });
@@ -107,6 +117,77 @@ function pintarProgreso(p) {
   $('#fase-nombre').textContent = p.fase ? p.fase.nombre : '';
   $('#ronda-label').textContent = `${p.ronda}/${p.totalRondas}`;
   $('#barra-rondas-fill').style.width = ((p.ronda - 1) / p.totalRondas) * 100 + '%';
+  if (p.fase) cambiarFase(p.fase);
+}
+
+// =====================================================================
+// TRANSICIÓN DE FASE
+// El fondo cambia de color en cada instancia de la carrera. El cambio no
+// es un fundido: es un barrido diagonal de bloques, como una cortina de
+// píxeles de consola vieja.
+// =====================================================================
+let faseActual = null;
+const COLS = 14;
+const PASO = 15;      // ms de retraso por diagonal
+const DUR = 160;      // ms que tarda cada bloque
+
+const colorDeFase = (codigo) =>
+  getComputedStyle(document.documentElement).getPropertyValue(`--fase-${codigo}`).trim();
+
+function cambiarFase(fase) {
+  if (fase.codigo === faseActual) return;
+
+  // La primera vez no se anima: se entra al juego ya con el color.
+  if (faseActual === null) {
+    faseActual = fase.codigo;
+    document.body.dataset.fase = fase.codigo;
+    return;
+  }
+  faseActual = fase.codigo;
+
+  const ov = $('#transicion');
+  const grid = ov.querySelector('.tr-grid');
+  const label = ov.querySelector('.tr-label');
+
+  const lado = window.innerWidth / COLS;
+  const filas = Math.max(4, Math.ceil(window.innerHeight / lado));
+
+  grid.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${filas}, 1fr)`;
+  grid.innerHTML = '';
+
+  const celdas = [];
+  for (let f = 0; f < filas; f++) {
+    for (let c = 0; c < COLS; c++) {
+      const i = document.createElement('i');
+      i.style.setProperty('--d', (f + c) * PASO + 'ms');
+      grid.appendChild(i);
+      celdas.push(i);
+    }
+  }
+
+  ov.style.setProperty('--tr-color', colorDeFase(fase.codigo));
+  ov.classList.add('activa');
+  celdas.forEach((c) => c.classList.add('entra'));
+
+  const cubrir = (filas + COLS) * PASO + DUR;
+
+  // Con la pantalla tapada se cambia el fondo y se anuncia la instancia.
+  setTimeout(() => {
+    document.body.dataset.fase = fase.codigo;
+    label.textContent = fase.nombre;
+    label.classList.add('visible');
+  }, cubrir);
+
+  setTimeout(() => {
+    celdas.forEach((c) => { c.classList.remove('entra'); c.classList.add('sale'); });
+  }, cubrir + 620);
+
+  setTimeout(() => {
+    ov.classList.remove('activa');
+    label.classList.remove('visible');
+    grid.innerHTML = '';
+  }, cubrir + 620 + cubrir);
 }
 
 // =====================================================================
@@ -133,6 +214,10 @@ function renderEvento(p) {
   carta.style.transform = '';
   carta.style.opacity = '';
 
+  // El color de la franja sale de la categoría del evento.
+  const cat = p.evento.esAviso ? 'aviso' : (p.evento.categoria || 'generales');
+  carta.dataset.cat = cat;
+  $('#carta-ilu').dataset.cat = cat;
   $('#carta-ilu').innerHTML = ilustracion(p.evento.ilustracion);
   $('#carta-personaje').textContent = p.evento.personaje || (p.evento.esAviso ? 'Aviso' : '');
   $('#carta-titulo').textContent = p.evento.titulo || '';
@@ -245,7 +330,9 @@ function mostrarResultado(r) {
     .filter(([, v]) => v !== 0)
     .map(([cod, v]) => {
       const s = META.stats.find((x) => x.codigo === cod);
-      return `<span class="delta ${v > 0 ? 'pos' : 'neg'}">${s?.icono || ''} ${v > 0 ? '+' : ''}${v}</span>`;
+      return `<span class="delta ${v > 0 ? 'pos' : 'neg'}" title="${s?.nombre || cod}">
+        <span class="delta-ico" style="color:${s?.color || 'currentColor'}">${icono(s?.icono, cod)}</span>
+        ${v > 0 ? '+' : ''}${v}</span>`;
     }).join('') || '<span class="delta">sin cambios</span>';
 
   $('#resultado').classList.remove('oculto');
@@ -272,6 +359,8 @@ function renderMinijuego(p) {
   const box = $('#minijuego');
   box.classList.remove('oculto');
 
+  box.dataset.cat = 'minijuego';
+  $('#mj-ilu').dataset.cat = 'minijuego';
   $('#mj-ilu').innerHTML = ilustracion(p.minijuego.ilustracion);
   $('#mj-nombre').textContent = p.minijuego.nombre;
   $('#mj-instrucciones').textContent = p.minijuego.instrucciones || p.minijuego.descripcion || '';
@@ -299,136 +388,585 @@ async function terminarMinijuego(puntaje) {
   mostrarResultado(r);
 }
 
+// ---------------------------------------------------------------------
+//  Las ocho mecánicas. Cada una recibe la config del minijuego (que sale
+//  de db/contenido.js) y una función `listo(puntaje)` con un 0-100.
+//  Todas escriben dentro de #mj-area y usan #mj-estado para el marcador.
+// ---------------------------------------------------------------------
+const area = () => $('#mj-area');
+const estado = (t) => { $('#mj-estado').textContent = t; };
+const el = (tag, cls, txt) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (txt != null) e.textContent = txt;
+  return e;
+};
+const mezclar = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((p) => p[1]);
+const limitar = (n) => Math.max(0, Math.min(100, Math.round(n)));
+
+// Reloj para los juegos que se pueden resolver o no. Sin esto, alguien que
+// no encuentra las palabras queda trabado en la pantalla para siempre.
+function reloj(segundos, marcador, alVencer) {
+  let quedan = segundos;
+  const pintar = () => estado(`${marcador()} · ${quedan}s`);
+  pintar();
+  const id = setInterval(() => {
+    quedan--;
+    pintar();
+    if (quedan <= 0) { clearInterval(id); alVencer(); }
+  }, 1000);
+  return { parar: () => clearInterval(id), refrescar: pintar };
+}
+// Para comparar lo que escribe el jugador: sin tildes, sin mayúsculas.
+const normalizar = (s) => String(s).trim().toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
 const MECANICAS = {
-  // --- Frenar la aguja dentro de la zona verde ---
-  barra_timing(cfg, listo) {
-    const intentos = cfg.intentos ?? 3;
-    const ancho = cfg.ancho_zona ?? 22;
-    const vel = cfg.velocidad ?? 1.6;
 
-    const area = $('#mj-area');
-    area.innerHTML = `<div class="pista"><div class="zona"></div><div class="aguja"></div></div>`;
-    const zona = area.querySelector('.zona');
-    const aguja = area.querySelector('.aguja');
+  // --- 1. Tres en línea contra la otra lista ---
+  tres_en_linea(cfg, listo) {
+    const LINEAS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    const tab = Array(9).fill('');
+    const celdas = [];
+    let fin = false;
 
-    let restantes = intentos, aciertos = [];
-    let pos = 0, dir = 1, raf = null, zonaIni = 0;
+    const a = area();
+    a.innerHTML = '';
+    const grilla = el('div', 'ttt');
+    for (let i = 0; i < 9; i++) {
+      const b = el('button', 'ttt-c');
+      b.type = 'button';
+      b.onclick = () => jugar(i);
+      grilla.appendChild(b);
+      celdas.push(b);
+    }
+    a.appendChild(grilla);
 
-    const nuevaZona = () => {
-      zonaIni = Math.random() * (100 - ancho);
-      zona.style.left = zonaIni + '%';
-      zona.style.width = ancho + '%';
-    };
-    const tick = () => {
-      pos += dir * vel;
-      if (pos >= 100) { pos = 100; dir = -1; }
-      if (pos <= 0) { pos = 0; dir = 1; }
-      aguja.style.left = pos + '%';
-      raf = requestAnimationFrame(tick);
-    };
-    const estado = () => { $('#mj-estado').textContent = `Intentos restantes: ${restantes}`; };
-
-    const frenar = () => {
-      if (restantes <= 0) return;
-      const centro = zonaIni + ancho / 2;
-      const dist = Math.abs(pos - centro);
-      const precision = dist <= ancho / 2 ? 1 - (dist / (ancho / 2)) * 0.4 : Math.max(0, 0.5 - dist / 60);
-      aciertos.push(precision);
-      restantes--;
-      estado();
-      if (restantes === 0) {
-        cancelAnimationFrame(raf);
-        area.onclick = null;
-        const prom = aciertos.reduce((a, b) => a + b, 0) / aciertos.length;
-        listo(Math.round(prom * 100));
-      } else {
-        nuevaZona();
-      }
-    };
-
-    nuevaZona(); estado(); tick();
-    area.onclick = frenar;
-    $('#mj-instrucciones').textContent = 'Hacé clic sobre la pista para frenar la aguja en la franja verde.';
-  },
-
-  // --- Clickear lo más rápido posible ---
-  click_rapido(cfg, listo) {
-    const segundos = cfg.segundos ?? 8;
-    const objetivo = cfg.objetivo ?? 40;
-
-    const area = $('#mj-area');
-    area.innerHTML = `<button class="boton-mj" type="button">¡DALE!</button>`;
-    const btn = area.querySelector('button');
-
-    let clicks = 0;
-    let queda = segundos;
-    $('#mj-estado').textContent = `${queda}s — 0 clics`;
-
-    btn.onclick = () => { clicks++; $('#mj-estado').textContent = `${queda}s — ${clicks} clics`; };
-
-    const t = setInterval(() => {
-      queda--;
-      $('#mj-estado').textContent = `${queda}s — ${clicks} clics`;
-      if (queda <= 0) {
-        clearInterval(t);
-        btn.onclick = null;
-        btn.disabled = true;
-        listo(Math.min(100, (clicks / objetivo) * 100));
-      }
-    }, 1000);
-  },
-
-  // --- Repetir la secuencia ---
-  memoria(cfg, listo) {
-    const largo = cfg.largo ?? 5;
-    const celdas = cfg.celdas ?? 4;
-
-    const area = $('#mj-area');
-    area.innerHTML = `<div class="grilla">${
-      Array.from({ length: celdas }, (_, i) => `<div class="celda" data-i="${i}"></div>`).join('')}</div>`;
-    const els = [...area.querySelectorAll('.celda')];
-
-    const seq = Array.from({ length: largo }, () => Math.floor(Math.random() * celdas));
-    let idx = 0, aciertos = 0, aceptando = false;
-
-    const flash = (i, ms = 420) => new Promise((res) => {
-      els[i].classList.add('on');
-      setTimeout(() => { els[i].classList.remove('on'); setTimeout(res, 140); }, ms);
+    const ganador = (t) => LINEAS.find((l) => t[l[0]] && t[l[0]] === t[l[1]] && t[l[1]] === t[l[2]]);
+    const libres = (t) => t.map((v, i) => (v ? -1 : i)).filter((i) => i >= 0);
+    const pintar = () => celdas.forEach((b, i) => {
+      b.textContent = tab[i];
+      b.classList.toggle('ocupada', !!tab[i]);
+      b.classList.toggle('rival', tab[i] === 'O');
     });
 
-    (async () => {
-      $('#mj-estado').textContent = 'Mirá la secuencia…';
-      await new Promise((r) => setTimeout(r, 500));
-      for (const i of seq) await flash(i);
-      aceptando = true;
-      $('#mj-estado').textContent = `Tu turno: 0/${largo}`;
-    })();
+    function jugar(i) {
+      if (fin || tab[i]) return;
+      tab[i] = 'X'; pintar();
+      if (cerrar()) return;
+      estado('Piensa la otra lista…');
+      setTimeout(() => {
+        const m = rival();
+        if (m !== undefined) { tab[m] = 'O'; pintar(); }
+        if (!cerrar()) estado('Te toca.');
+      }, 300);
+    }
 
-    els.forEach((el) => {
-      el.onclick = async () => {
-        if (!aceptando) return;
-        const i = Number(el.dataset.i);
-        const ok = seq[idx] === i;
-        if (ok) aciertos++;
-        el.classList.add(ok ? 'on' : 'mal');
-        setTimeout(() => el.classList.remove('on', 'mal'), 220);
-        idx++;
-        $('#mj-estado').textContent = `Tu turno: ${idx}/${largo}`;
-        if (idx >= largo) {
-          aceptando = false;
-          els.forEach((e) => { e.onclick = null; });
-          setTimeout(() => listo((aciertos / largo) * 100), 350);
+    // No juega perfecto a propósito: se le puede ganar.
+    function rival() {
+      const l = libres(tab);
+      if (Math.random() < (cfg.astucia ?? 0.65)) {
+        for (const s of ['O', 'X']) {
+          for (const i of l) { const t = [...tab]; t[i] = s; if (ganador(t)) return i; }
         }
-      };
+        if (!tab[4]) return 4;
+      }
+      return l[Math.floor(Math.random() * l.length)];
+    }
+
+    function cerrar() {
+      const g = ganador(tab);
+      if (g) {
+        fin = true;
+        g.forEach((i) => celdas[i].classList.add('gana'));
+        const gane = tab[g[0]] === 'X';
+        estado(gane ? '¡Ganaste!' : 'Te ganaron.');
+        setTimeout(() => listo(gane ? 100 : 15), 800);
+        return true;
+      }
+      if (!libres(tab).length) {
+        fin = true;
+        estado('Empate.');
+        setTimeout(() => listo(55), 800);
+        return true;
+      }
+      return false;
+    }
+
+    estado('Sos las X. Te toca.');
+  },
+
+  // --- 2. Memo test: encontrar los pares ---
+  memotest(cfg, listo) {
+    const pares = cfg.pares ?? 4;
+    const fichas = mezclar((cfg.simbolos ?? ['W', 'M', 'D', 'G', 'B', 'F'])
+      .slice(0, pares).flatMap((s) => [s, s]));
+
+    const a = area();
+    a.innerHTML = '';
+    const grilla = el('div', 'memo');
+    grilla.style.gridTemplateColumns = `repeat(${cfg.columnas ?? 4}, 1fr)`;
+    const cartas = fichas.map((s, i) => {
+      const b = el('button', 'memo-c');
+      b.type = 'button';
+      b.dataset.simbolo = s;
+      b.onclick = () => dar(i);
+      grilla.appendChild(b);
+      return b;
     });
+    a.appendChild(grilla);
+
+    let abiertas = [], resueltas = 0, intentos = 0, bloqueado = false;
+    const marcador = () => estado(`Pares: ${resueltas}/${pares} · Intentos: ${intentos}`);
+
+    function dar(i) {
+      const c = cartas[i];
+      if (bloqueado || c.classList.contains('vista') || c.classList.contains('lista')) return;
+      c.classList.add('vista');
+      c.textContent = fichas[i];
+      abiertas.push(i);
+      if (abiertas.length < 2) return;
+
+      intentos++;
+      const [p, q] = abiertas;
+      abiertas = [];
+      if (fichas[p] === fichas[q]) {
+        cartas[p].classList.add('lista');
+        cartas[q].classList.add('lista');
+        resueltas++;
+        marcador();
+        if (resueltas === pares) {
+          // El mínimo posible son `pares` intentos; cada error de más descuenta.
+          setTimeout(() => listo(limitar(100 - (intentos - pares) * 12)), 500);
+        }
+      } else {
+        bloqueado = true;
+        marcador();
+        setTimeout(() => {
+          [p, q].forEach((k) => { cartas[k].classList.remove('vista'); cartas[k].textContent = ''; });
+          bloqueado = false;
+        }, 620);
+      }
+    }
+    marcador();
+  },
+
+  // --- 3. Traducir el paper: opción múltiple ---
+  traducir(cfg, listo) {
+    const banco = mezclar(cfg.palabras ?? []).slice(0, cfg.rondas ?? 5);
+    let i = 0, aciertos = 0;
+
+    function ronda() {
+      if (i >= banco.length) return listo(limitar((aciertos / banco.length) * 100));
+      const p = banco[i];
+      estado(`${i + 1} de ${banco.length} · ${aciertos} bien`);
+
+      const a = area();
+      a.innerHTML = '';
+      a.appendChild(el('div', 'palabra', p.en));
+      const ops = el('div', 'opciones-mj');
+      mezclar([p.es, ...p.mal]).forEach((texto) => {
+        const b = el('button', 'op-mj', texto);
+        b.type = 'button';
+        b.onclick = () => {
+          if (a.dataset.bloq === '1') return;
+          a.dataset.bloq = '1';
+          const bien = texto === p.es;
+          if (bien) aciertos++;
+          b.classList.add(bien ? 'bien' : 'mal');
+          if (!bien) [...ops.children].find((x) => x.textContent === p.es)?.classList.add('bien');
+          setTimeout(() => { a.dataset.bloq = '0'; i++; ronda(); }, 700);
+        };
+        ops.appendChild(b);
+      });
+      a.appendChild(ops);
+    }
+    ronda();
+  },
+
+  // --- 4. Sopa de letras: clic en la primera y en la última letra ---
+  sopa(cfg, listo) {
+    const N = cfg.lado ?? 8;
+    const objetivo = (cfg.palabras ?? ['WEBER', 'ANOMIA', 'PRAXIS']).map((w) => w.toUpperCase());
+    const grid = Array.from({ length: N }, () => Array(N).fill(''));
+    const ubicadas = [];
+
+    // Coloca cada palabra en horizontal o vertical, sin pisarse.
+    for (const palabra of objetivo) {
+      for (let intento = 0; intento < 200; intento++) {
+        const horizontal = Math.random() < 0.5;
+        const largo = palabra.length;
+        const f = Math.floor(Math.random() * (horizontal ? N : N - largo + 1));
+        const c = Math.floor(Math.random() * (horizontal ? N - largo + 1 : N));
+        let entra = true;
+        for (let k = 0; k < largo; k++) {
+          const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
+          if (grid[ff][cc] && grid[ff][cc] !== palabra[k]) { entra = false; break; }
+        }
+        if (!entra) continue;
+        for (let k = 0; k < largo; k++) {
+          const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
+          grid[ff][cc] = palabra[k];
+        }
+        ubicadas.push({ palabra, f, c, horizontal });
+        break;
+      }
+    }
+    const abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let f = 0; f < N; f++) for (let c = 0; c < N; c++) {
+      if (!grid[f][c]) grid[f][c] = abc[Math.floor(Math.random() * abc.length)];
+    }
+
+    const a = area();
+    a.innerHTML = '';
+    const lista = el('div', 'sopa-lista');
+    objetivo.forEach((w) => { const s = el('span', 'sopa-w', w); s.dataset.w = w; lista.appendChild(s); });
+    const tabla = el('div', 'sopa');
+    tabla.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+    const celdas = [];
+    for (let f = 0; f < N; f++) for (let c = 0; c < N; c++) {
+      const b = el('button', 'sopa-c', grid[f][c]);
+      b.type = 'button';
+      b.dataset.f = f; b.dataset.c = c;
+      b.onclick = () => tocar(f, c, b);
+      tabla.appendChild(b);
+      celdas.push(b);
+    }
+    a.appendChild(tabla);
+    a.appendChild(lista);
+
+    let inicio = null, halladas = 0, terminado = false;
+    const marcar = () => `Encontradas: ${halladas}/${ubicadas.length}`;
+    const cerrar = () => {
+      if (terminado) return;
+      terminado = true;
+      t.parar();
+      setTimeout(() => listo(limitar((halladas / ubicadas.length) * 100)), 450);
+    };
+    const t = reloj(cfg.segundos ?? 45, marcar, cerrar);
+
+    function tocar(f, c, b) {
+      if (terminado) return;
+      if (!inicio) { inicio = { f, c, b }; b.classList.add('sel'); t.refrescar(); return; }
+      const u = ubicadas.find((x) => !x.hecha && (
+        (x.f === inicio.f && x.c === inicio.c
+          && x.f + (x.horizontal ? 0 : x.palabra.length - 1) === f
+          && x.c + (x.horizontal ? x.palabra.length - 1 : 0) === c)
+        || (x.f === f && x.c === c
+          && x.f + (x.horizontal ? 0 : x.palabra.length - 1) === inicio.f
+          && x.c + (x.horizontal ? x.palabra.length - 1 : 0) === inicio.c)));
+
+      inicio.b.classList.remove('sel');
+      if (u) {
+        u.hecha = true;
+        halladas++;
+        for (let k = 0; k < u.palabra.length; k++) {
+          const ff = u.f + (u.horizontal ? 0 : k), cc = u.c + (u.horizontal ? k : 0);
+          celdas[ff * N + cc].classList.add('hallada');
+        }
+        lista.querySelector(`[data-w="${u.palabra}"]`)?.classList.add('hallada');
+        if (halladas === ubicadas.length) cerrar();
+      }
+      inicio = null;
+      t.refrescar();
+    }
+  },
+
+  // --- 5. Crucigrama: grilla chica con palabras que se cruzan ---
+  crucigrama(cfg, listo) {
+    const filas = cfg.filas ?? 5, cols = cfg.columnas ?? 8;
+    const palabras = cfg.palabras ?? [];
+    const letras = {};     // "f,c" -> letra correcta
+    palabras.forEach((p) => {
+      const w = p.palabra.toUpperCase();
+      for (let k = 0; k < w.length; k++) {
+        const f = p.f + (p.horizontal ? 0 : k), c = p.c + (p.horizontal ? k : 0);
+        letras[`${f},${c}`] = w[k];
+      }
+    });
+
+    const a = area();
+    a.innerHTML = '';
+    const tabla = el('div', 'cruci');
+    tabla.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    const inputs = [];
+    for (let f = 0; f < filas; f++) for (let c = 0; c < cols; c++) {
+      const clave = `${f},${c}`;
+      if (!letras[clave]) { tabla.appendChild(el('div', 'cruci-x')); continue; }
+      const i = document.createElement('input');
+      i.className = 'cruci-c';
+      i.maxLength = 1;
+      i.dataset.clave = clave;
+      i.autocomplete = 'off';
+      i.oninput = () => {
+        i.value = i.value.toUpperCase().replace(/[^A-ZÑ]/g, '');
+        if (i.value) { const n = inputs[inputs.indexOf(i) + 1]; if (n) n.focus(); }
+        revisar();
+      };
+      i.onkeydown = (e) => {
+        if (e.key === 'Backspace' && !i.value) { const p = inputs[inputs.indexOf(i) - 1]; if (p) p.focus(); }
+      };
+      tabla.appendChild(i);
+      inputs.push(i);
+    }
+    a.appendChild(tabla);
+
+    const pistas = el('div', 'pistas');
+    palabras.forEach((p) => pistas.appendChild(
+      el('div', 'pista', `${p.horizontal ? '→' : '↓'} ${p.pista}`)));
+    a.appendChild(pistas);
+
+    const total = inputs.length;
+    let bien = 0, terminado = false;
+    const marcar = () => `${bien}/${total} letras`;
+    const cerrar = () => {
+      if (terminado) return;
+      terminado = true;
+      t.parar();
+      inputs.forEach((i) => { i.disabled = true; });
+      setTimeout(() => listo(limitar((bien / total) * 100)), 450);
+    };
+    // "Parcial contrarreloj": si no llegás, entregás lo que tengas.
+    const t = reloj(cfg.segundos ?? 60, marcar, cerrar);
+
+    function revisar() {
+      if (terminado) return;
+      bien = inputs.filter((i) => i.value === letras[i.dataset.clave]).length;
+      inputs.forEach((i) => i.classList.toggle('bien', !!i.value && i.value === letras[i.dataset.clave]));
+      t.refrescar();
+      if (bien === total) cerrar();
+    }
+    inputs[0]?.focus();
+  },
+
+  // --- 6. Escribir bien los apellidos ---
+  apellidos(cfg, listo) {
+    const banco = mezclar(cfg.autores ?? []).slice(0, cfg.rondas ?? 4);
+    let i = 0, aciertos = 0;
+
+    function ronda() {
+      if (i >= banco.length) return listo(limitar((aciertos / banco.length) * 100));
+      const p = banco[i];
+      estado(`${i + 1} de ${banco.length} · ${aciertos} bien`);
+
+      const a = area();
+      a.innerHTML = '';
+      a.appendChild(el('div', 'como-suena', `«${p.mal}»`));
+      const fila = el('div', 'fila-input');
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'input-mj';
+      inp.placeholder = 'Escribilo bien';
+      inp.autocomplete = 'off';
+      inp.autocapitalize = 'off';
+      inp.spellcheck = false;
+      const btn = el('button', 'op-mj enviar', 'OK');
+      btn.type = 'button';
+      fila.appendChild(inp); fila.appendChild(btn);
+      a.appendChild(fila);
+      inp.focus();
+
+      const responder = () => {
+        if (a.dataset.bloq === '1') return;
+        a.dataset.bloq = '1';
+        const bien = normalizar(inp.value) === normalizar(p.bien);
+        if (bien) aciertos++;
+        inp.classList.add(bien ? 'bien' : 'mal');
+        if (!bien) inp.value = p.bien;
+        setTimeout(() => { a.dataset.bloq = '0'; i++; ronda(); }, 800);
+      };
+      btn.onclick = responder;
+      inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); responder(); } };
+    }
+    ronda();
+  },
+
+  // --- 7. Conector de puntos: unir en orden ---
+  conectar(cfg, listo) {
+    const n = cfg.puntos ?? 9;
+    const a = area();
+    a.innerHTML = '';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 100 76');
+    svg.setAttribute('class', 'puntos');
+    a.appendChild(svg);
+
+    // Posiciones sin encimarse
+    const pos = [];
+    for (let i = 0; i < n; i++) {
+      let p, choques = 0;
+      do {
+        p = { x: 10 + Math.random() * 80, y: 10 + Math.random() * 56 };
+        choques++;
+      } while (choques < 80 && pos.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 17));
+      pos.push(p);
+    }
+
+    const ns = 'http://www.w3.org/2000/svg';
+    const linea = document.createElementNS(ns, 'polyline');
+    linea.setAttribute('class', 'puntos-linea');
+    linea.setAttribute('points', '');
+    svg.appendChild(linea);
+
+    let siguiente = 0, errores = 0;
+    const marcar = () => estado(`Punto ${siguiente} de ${n}${errores ? ` · ${errores} errores` : ''}`);
+
+    pos.forEach((p, i) => {
+      const g = document.createElementNS(ns, 'g');
+      g.setAttribute('class', 'punto');
+      const c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', 6);
+      const t = document.createElementNS(ns, 'text');
+      t.setAttribute('x', p.x); t.setAttribute('y', p.y + 2.6);
+      t.setAttribute('text-anchor', 'middle');
+      t.textContent = i + 1;
+      g.appendChild(c); g.appendChild(t);
+      g.addEventListener('click', () => {
+        if (i !== siguiente) {
+          errores++;
+          g.classList.add('error');
+          setTimeout(() => g.classList.remove('error'), 260);
+          marcar();
+          return;
+        }
+        g.classList.add('hecho');
+        siguiente++;
+        linea.setAttribute('points',
+          pos.slice(0, siguiente).map((q) => `${q.x},${q.y}`).join(' '));
+        marcar();
+        if (siguiente === n) setTimeout(() => listo(limitar(100 - errores * 14)), 450);
+      });
+      svg.appendChild(g);
+    });
+    marcar();
+  },
+
+  // --- 8. Saltar el molinete: corredor tipo dino ---
+  molinete(cfg, listo) {
+    const TOTAL = cfg.obstaculos ?? 10;
+    const a = area();
+    a.innerHTML = '';
+    const cv = document.createElement('canvas');
+    cv.className = 'runner';
+    cv.width = 640; cv.height = 220;
+    a.appendChild(cv);
+    const ctx = cv.getContext('2d');
+
+    const css = getComputedStyle(document.documentElement);
+    const col = (n, alt) => css.getPropertyValue(n).trim() || alt;
+    const NEGRO = col('--negro', '#12100E');
+    const AMARILLO = col('--amarillo', '#FFD520');
+    const NARANJA = col('--naranja', '#F05A28');
+    const CELESTE = col('--celeste', '#6DCFF6');
+
+    const SUELO = 176, ALTO_J = 46, ANCHO_J = 30, JX = 70;
+    let y = SUELO - ALTO_J, vy = 0, saltando = false;
+    let vel = cfg.velocidad ?? 4.6;
+    let pasados = 0, chocado = false, corriendo = true, t = 0;
+    let obstaculos = [{ x: 700 }];
+
+    const saltar = () => {
+      if (!corriendo || saltando) return;
+      saltando = true;
+      vy = -13.2;
+    };
+    cv.addEventListener('pointerdown', saltar);
+    const tecla = (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); saltar(); }
+    };
+    window.addEventListener('keydown', tecla);
+
+    const terminar = () => {
+      corriendo = false;
+      window.removeEventListener('keydown', tecla);
+      setTimeout(() => listo(limitar((pasados / TOTAL) * 100)), 650);
+    };
+
+    function paso() {
+      if (!corriendo) return;
+      t++;
+
+      vy += 0.72;
+      y += vy;
+      if (y >= SUELO - ALTO_J) { y = SUELO - ALTO_J; vy = 0; saltando = false; }
+
+      obstaculos.forEach((o) => { o.x -= vel; });
+      // Uno nuevo cuando el último ya avanzó lo suficiente
+      const ultimo = obstaculos[obstaculos.length - 1];
+      if (ultimo && ultimo.x < 380 && pasados + obstaculos.length < TOTAL) {
+        obstaculos.push({ x: 640 + Math.random() * 120 });
+      }
+      obstaculos = obstaculos.filter((o) => {
+        if (o.x < -40) { pasados++; vel += 0.16; return false; }
+        return true;
+      });
+
+      // Colisión
+      for (const o of obstaculos) {
+        if (o.x < JX + ANCHO_J && o.x + 26 > JX && y + ALTO_J > SUELO - 42) {
+          chocado = true;
+          break;
+        }
+      }
+
+      dibujar();
+      estado(`Molinetes: ${pasados}/${TOTAL}`);
+
+      if (chocado) { dibujar(true); return terminar(); }
+      if (pasados >= TOTAL) return terminar();
+      requestAnimationFrame(paso);
+    }
+
+    function dibujar(golpe) {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      // Andén
+      ctx.fillStyle = NEGRO;
+      ctx.fillRect(0, SUELO, cv.width, 5);
+      ctx.fillStyle = 'rgba(18,16,14,.25)';
+      for (let x = -(t * vel) % 40; x < cv.width; x += 40) ctx.fillRect(x, SUELO + 12, 20, 4);
+
+      // Molinetes
+      obstaculos.forEach((o) => {
+        ctx.fillStyle = CELESTE;
+        ctx.fillRect(o.x, SUELO - 42, 26, 42);
+        ctx.fillStyle = NEGRO;
+        ctx.fillRect(o.x, SUELO - 42, 26, 4);
+        ctx.fillRect(o.x, SUELO - 4, 26, 4);
+        ctx.fillRect(o.x, SUELO - 42, 4, 42);
+        ctx.fillRect(o.x + 22, SUELO - 42, 4, 42);
+        ctx.fillRect(o.x + 2, SUELO - 26, 22, 5);   // el brazo del molinete
+      });
+
+      // Estudiante
+      ctx.fillStyle = golpe ? NARANJA : AMARILLO;
+      ctx.fillRect(JX, y, ANCHO_J, ALTO_J);
+      ctx.fillStyle = NEGRO;
+      ctx.lineWidth = 0;
+      ctx.fillRect(JX, y, ANCHO_J, 4);
+      ctx.fillRect(JX, y + ALTO_J - 4, ANCHO_J, 4);
+      ctx.fillRect(JX, y, 4, ALTO_J);
+      ctx.fillRect(JX + ANCHO_J - 4, y, 4, ALTO_J);
+      ctx.fillRect(JX + 8, y + 12, 5, 5);          // ojo
+      ctx.fillRect(JX + 6, y + 26, 16, 4);         // mochila
+      // Piernas alternadas mientras corre
+      if (!saltando && Math.floor(t / 6) % 2 === 0) ctx.fillRect(JX + 4, y + ALTO_J, 6, 7);
+      else if (!saltando) ctx.fillRect(JX + ANCHO_J - 10, y + ALTO_J, 6, 7);
+    }
+
+    estado(`Molinetes: 0/${TOTAL}`);
+    requestAnimationFrame(paso);
   },
 };
 
 // =====================================================================
 // FINAL
 // =====================================================================
+let ultimoFinal = null;
+
 function renderFinal(p) {
+  ultimoFinal = p;
   mostrarPantalla('pantalla-final');
+  $('#final-ilu').dataset.cat = p.abandono ? 'aviso' : 'generales';
   $('#final-ilu').innerHTML = ilustracion(p.final.ilustracion);
   $('#final-sello').textContent = p.abandono ? 'Carrera interrumpida' : 'Fin de la carrera';
   $('#final-titulo').textContent = p.final.titulo;
@@ -436,8 +974,9 @@ function renderFinal(p) {
 
   $('#final-stats').innerHTML = p.stats.map((s) => `
     <div class="fs">
+      <span class="fs-ico" style="color:${s.color}">${icono(s.icono, s.codigo)}</span>
       <b style="color:${s.color}">${s.valor}</b>
-      <span>${s.nombre}</span>
+      <span class="fs-nom">${s.nombre}</span>
     </div>`).join('');
 
   $('#final-resumen').innerHTML = (p.resumen || []).map((h) => {
@@ -447,6 +986,214 @@ function renderFinal(p) {
     return `<li><b>${h.evento}</b><br><em>${h.respuesta || ''}</em><br>${h.resultado || ''}${
       deltas ? `<br><small>${deltas}</small>` : ''}</li>`;
   }).join('');
+}
+
+// =====================================================================
+// EXPORTAR LA PARTIDA COMO IMAGEN
+// Se dibuja en canvas en vez de capturar el DOM: sin dependencias, y el
+// resultado es una placa pensada para compartir, no un screenshot.
+// =====================================================================
+const ESCALA = 2;          // se dibuja en unidades de diseño y se exporta al doble
+const ANCHO = 540;
+const MARGEN = 26;
+
+// Convierte un SVG de la biblioteca en una imagen lista para el canvas.
+function svgAImagen(svgTexto, trazo, masa, tam) {
+  const svg = svgTexto
+    .replace(/currentColor/g, trazo)
+    .replace(/var\(--ilu-masa,\s*#FFFFFF\)/g, masa)
+    .replace('<svg ', `<svg width="${tam}" height="${tam}" `);
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  return img.decode().then(() => img);
+}
+
+function envolver(ctx, texto, ancho) {
+  const lineas = [];
+  let linea = '';
+  for (const palabra of String(texto).split(' ')) {
+    const prueba = linea ? `${linea} ${palabra}` : palabra;
+    if (ctx.measureText(prueba).width > ancho && linea) { lineas.push(linea); linea = palabra; }
+    else linea = prueba;
+  }
+  if (linea) lineas.push(linea);
+  return lineas;
+}
+
+async function construirPlaca() {
+  const p = ultimoFinal;
+  const css = getComputedStyle(document.documentElement);
+  const col = (n) => css.getPropertyValue(n).trim();
+  const NEGRO = col('--negro') || '#12100E';
+  const AMARILLO = col('--amarillo') || '#FFD520';
+  const NARANJA = col('--naranja') || '#F05A28';
+  const fondo = getComputedStyle(document.body).backgroundColor;
+
+  // Las tipografías tienen que estar cargadas o el canvas usa la de sistema.
+  if (document.fonts?.ready) await document.fonts.ready;
+
+  const medidor = document.createElement('canvas').getContext('2d');
+  const interior = ANCHO - MARGEN * 2 - 8;   // menos el borde del panel
+  const textoX = 24;
+
+  medidor.font = '800 30px "Archivo Black", "Arial Black", sans-serif';
+  const lineasTitulo = envolver(medidor, p.final.titulo.toUpperCase(), interior - textoX * 2);
+  medidor.font = '500 15px "Trebuchet MS", sans-serif';
+  const lineasTexto = envolver(medidor, p.final.texto, interior - textoX * 2);
+
+  const bandaH = 200;
+  const alturaPanel = bandaH + 30 + 26 + lineasTitulo.length * 34 + 16
+    + lineasTexto.length * 23 + 26 + 96 + 26 + 46 + 24;
+  const ALTO = alturaPanel + MARGEN * 2;
+
+  const cv = document.createElement('canvas');
+  cv.width = ANCHO * ESCALA;
+  cv.height = ALTO * ESCALA;
+  const ctx = cv.getContext('2d');
+  ctx.scale(ESCALA, ESCALA);
+  ctx.textBaseline = 'alphabetic';
+
+  // --- Fondo con la cuadrícula de píxeles ---
+  ctx.fillStyle = fondo;
+  ctx.fillRect(0, 0, ANCHO, ALTO);
+  ctx.fillStyle = 'rgba(0,0,0,.16)';
+  for (let x = 0; x < ANCHO; x += 18) ctx.fillRect(x, 0, 2, ALTO);
+  for (let y = 0; y < ALTO; y += 18) ctx.fillRect(0, y, ANCHO, 2);
+
+  // --- Panel ---
+  const px = MARGEN, py = MARGEN, pw = ANCHO - MARGEN * 2;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(px, py, pw, alturaPanel);
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = NEGRO;
+  ctx.strokeRect(px + 2, py + 2, pw - 4, alturaPanel - 4);
+
+  // --- Banda de color con la ilustración ---
+  const tinte = p.abandono ? col('--beige') : AMARILLO;
+  ctx.fillStyle = tinte;
+  ctx.fillRect(px + 4, py + 4, pw - 8, bandaH - 4);
+  ctx.fillStyle = NEGRO;
+  ctx.fillRect(px + 4, py + bandaH, pw - 8, 4);
+
+  const ilu = await svgAImagen(ilustracion(p.final.ilustracion), NEGRO, '#FFFFFF', 200);
+  ctx.drawImage(ilu, px + pw / 2 - 74, py + 26, 148, 148);
+
+  let y = py + bandaH + 4;
+
+  // --- Sello ---
+  const sello = p.abandono ? 'CARRERA INTERRUMPIDA' : 'FIN DE LA CARRERA';
+  ctx.font = '9px "Press Start 2P", monospace';
+  const selloW = ctx.measureText(sello).width + 28;
+  ctx.fillStyle = NEGRO;
+  ctx.fillRect(px + pw / 2 - selloW / 2, y, selloW, 28);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.textAlign = 'center';
+  ctx.fillText(sello, px + pw / 2, y + 19);
+  y += 28 + 26;
+
+  // --- Título ---
+  ctx.font = '800 30px "Archivo Black", "Arial Black", sans-serif';
+  ctx.lineWidth = 4;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = NEGRO;
+  ctx.fillStyle = NARANJA;
+  for (const l of lineasTitulo) {
+    ctx.strokeText(l, px + pw / 2, y + 24);
+    ctx.fillText(l, px + pw / 2, y + 24);
+    y += 34;
+  }
+  y += 16;
+
+  // --- Texto del final ---
+  ctx.font = '500 15px "Trebuchet MS", sans-serif';
+  ctx.fillStyle = '#24211C';
+  ctx.textAlign = 'left';
+  for (const l of lineasTexto) { ctx.fillText(l, px + textoX, y); y += 23; }
+  y += 26;
+
+  // --- Los cuatro stats ---
+  const visibles = p.stats.slice(0, 4);
+  const hueco = 8;
+  const cajaW = (pw - textoX * 2 - hueco * 3) / visibles.length;
+  const iconos = await Promise.all(visibles.map((s) =>
+    svgAImagen(icono(s.icono, s.codigo), s.color, '#FFFFFF', 48)));
+
+  visibles.forEach((s, i) => {
+    const bx = px + textoX + i * (cajaW + hueco);
+    ctx.fillStyle = NEGRO;
+    ctx.fillRect(bx, y, cajaW, 92);
+    ctx.drawImage(iconos[i], bx + cajaW / 2 - 11, y + 12, 22, 22);
+    ctx.textAlign = 'center';
+    ctx.font = '15px "Press Start 2P", monospace';
+    ctx.fillStyle = s.color;
+    ctx.fillText(String(s.valor), bx + cajaW / 2, y + 58);
+    ctx.font = '6.5px "Press Start 2P", monospace';
+    ctx.fillStyle = '#B9B7AE';
+    ctx.fillText(s.nombre.toUpperCase(), bx + cajaW / 2, y + 78);
+  });
+  y += 92 + 26;
+
+  // --- Pie ---
+  ctx.fillStyle = NEGRO;
+  ctx.fillRect(px + textoX, y, pw - textoX * 2, 3);
+  y += 26;
+  ctx.textAlign = 'left';
+  ctx.font = '13px "Press Start 2P", monospace';
+  ctx.fillStyle = NEGRO;
+  ctx.fillText('FSOQUER', px + textoX, y + 10);
+  ctx.textAlign = 'right';
+  ctx.font = '8px "Press Start 2P", monospace';
+  ctx.fillStyle = '#6B6B63';
+  const pie = nombreJugador ? nombreJugador.toUpperCase() : `${p.totalRondas} RONDAS`;
+  ctx.fillText(pie, px + pw - textoX, y + 9);
+
+  return cv;
+}
+
+function descargar(blob, nombre) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+async function exportarImagen() {
+  const btn = $('#btn-compartir');
+  if (!ultimoFinal || btn.disabled) return;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generando…';
+  try {
+    const cv = await construirPlaca();
+    const blob = await new Promise((res) => cv.toBlob(res, 'image/png'));
+    const nombre = `fsoquer-${ultimoFinal.final.codigo}.png`;
+    const archivo = new File([blob], nombre, { type: 'image/png' });
+
+    // En celular abre el menú de compartir; en escritorio descarga.
+    if (navigator.canShare?.({ files: [archivo] })) {
+      await navigator.share({ files: [archivo], title: 'FSOQUER', text: ultimoFinal.final.titulo });
+      btn.textContent = original;
+    } else {
+      descargar(blob, nombre);
+      btn.textContent = '¡Descargada!';
+      setTimeout(() => { btn.textContent = original; }, 2200);
+    }
+  } catch (e) {
+    // Si el usuario cancela el menú de compartir no es un error real.
+    if (e.name !== 'AbortError') {
+      console.error(e);
+      btn.textContent = 'No se pudo generar';
+      setTimeout(() => { btn.textContent = original; }, 2600);
+    } else {
+      btn.textContent = original;
+    }
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // =====================================================================

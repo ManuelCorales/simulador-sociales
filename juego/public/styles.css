@@ -1,296 +1,700 @@
+/* =====================================================================
+   Tema: arcade noventoso sobre verde, con la paleta de The Simpsons.
+   Bloques planos, contornos negros gruesos, sombras duras sin blur y
+   esquinas rectas. Nada de degradados ni bordes redondeados.
+   ===================================================================== */
+
 :root {
-  --bg: #0d0f14;
-  --bg2: #141821;
-  --panel: #1b2029;
-  --borde: #2b3340;
-  --texto: #e8eaf0;
-  --muted: #8891a3;
-  --acento: #e0af68;
-  --ok: #9ece6a;
-  --mal: #f7768e;
-  --radio: 16px;
-  --sombra: 0 18px 50px rgba(0,0,0,.55);
+  /* --- Paleta del póster --- */
+  --amarillo:      #FFD520;
+  --amarillo-osc:  #E8B800;
+  --naranja:       #F05A28;
+  --azul:          #0D7DC1;
+  --celeste:       #6DCFF6;
+  --azul-medio:    #2FA8D5;
+  --azul-suave:    #6FA9DC;
+  --verde:         #7AC143;
+  --verde-claro:   #CDE6A5;
+  --gris-azul:     #5F7B7E;
+  --beige:         #D3B183;
+  --blanco:        #FFFFFF;
+  --negro:         #12100E;
+
+  /* --- Fondo por instancia de la carrera ---
+     Arranca en un verde profundo de aula y se va oscureciendo: azul noche
+     en el medio y berenjena al final. Contra estos tonos las cartas blancas
+     y las franjas amarillas pegan mucho más que contra el verde chillón. */
+  --fase-ingresante: #2C6157;
+  --fase-intermedio: #24486E;
+  --fase-avanzado:   #4A2A46;
+
+  /* --- Roles --- */
+  --fondo:         var(--fase-ingresante);
+  --panel:         var(--blanco);
+  --texto:         var(--negro);
+  --muted:         #6B6B63;
+  --acento:        var(--amarillo);
+  --ok:            #3F9B2F;
+  --mal:           #D9401C;
+
+  --borde:         4px solid var(--negro);
+  --sombra:        8px 8px 0 var(--negro);
+  --sombra-chica:  5px 5px 0 var(--negro);
+
+  --pixel: "Press Start 2P", "Courier New", monospace;
+  --titulo: "Archivo Black", "Arial Black", Impact, sans-serif;
+  --cuerpo: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 700px at 50% -10%, #1c2231 0%, transparent 60%),
-    var(--bg);
   color: var(--texto);
-  font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.55 var(--cuerpo);
   min-height: 100vh;
   display: flex;
   justify-content: center;
   overflow-x: hidden;
+  /* Cuadrícula de píxeles sobre el color de la instancia */
+  background-color: var(--fondo);
+  background-image:
+    linear-gradient(rgba(0,0,0,.16) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(0,0,0,.16) 2px, transparent 2px);
+  background-size: 18px 18px;
 }
 
-#app { width: 100%; max-width: 520px; padding: 16px; position: relative; }
+body[data-fase="ingresante"] { --fondo: var(--fase-ingresante); }
+body[data-fase="intermedio"] { --fondo: var(--fase-intermedio); }
+body[data-fase="avanzado"]   { --fondo: var(--fase-avanzado); }
+
+#app { width: 100%; max-width: 540px; padding: 18px 16px 40px; position: relative; }
 
 .pantalla { display: none; }
 .pantalla.activa { display: block; }
 .oculto { display: none !important; }
 
-/* ---------------- Inicio ---------------- */
+/* ---------------- Inicio ----------------
+   Cada bloque respira: título, y después una pregunta por sección,
+   separadas con línea punteada. */
 .inicio-box {
-  margin-top: 8vh;
+  margin-top: 4vh;
   background: var(--panel);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  padding: 28px 24px;
+  border: var(--borde);
+  padding: 34px 26px 30px;
   box-shadow: var(--sombra);
 }
 .inicio-box h1 {
-  margin: 0 0 4px;
-  font-size: 30px;
-  letter-spacing: 4px;
-  color: var(--acento);
+  margin: 0 0 16px;
+  font-family: var(--titulo);
+  font-size: 38px;
+  line-height: .95;
+  letter-spacing: -1px;
+  text-transform: uppercase;
+  color: var(--amarillo);
+  -webkit-text-stroke: 3px var(--negro);
+  paint-order: stroke fill;
+  text-shadow: 4px 4px 0 var(--naranja);
 }
-.sub { margin: 0 0 24px; color: var(--muted); font-size: 14px; }
+/* Regla gruesa: corta la cabecera del formulario */
+.sub {
+  margin: 0 0 34px;
+  padding-bottom: 30px;
+  border-bottom: 4px solid var(--negro);
+  font-family: var(--pixel);
+  font-size: 9px;
+  line-height: 2;
+  color: var(--muted);
+}
 
-.campo { display: block; margin-bottom: 18px; }
-.campo > span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+.campo { display: block; margin: 0; }
+/* Punteada entre secciones: separa sin pesar como la regla del título */
+.campo + .campo {
+  margin-top: 32px;
+  padding-top: 30px;
+  border-top: 3px dashed rgba(18, 16, 14, .22);
+}
+.campo > span {
+  display: block;
+  font-family: var(--pixel);
+  font-size: 9px;
+  line-height: 1.7;
+  color: var(--negro);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
 
 input[type=text] {
   width: 100%;
-  background: var(--bg2);
-  border: 1px solid var(--borde);
-  color: var(--texto);
-  border-radius: 10px;
-  padding: 11px 13px;
-  font-size: 15px;
-  font-family: inherit;
+  background: #F4F2E9;
+  border: 3px solid var(--negro);
+  color: var(--negro);
+  padding: 12px 13px;
+  font-size: 16px;
+  font-family: var(--cuerpo);
+  font-weight: 600;
 }
-input[type=text]:focus { outline: none; border-color: var(--acento); }
+input[type=text]:focus { outline: none; background: var(--amarillo); }
 
-.opciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.opciones { display: flex; flex-wrap: wrap; gap: 10px; }
 .opciones button {
   flex: 1 1 auto;
-  background: var(--bg2);
-  border: 1px solid var(--borde);
-  color: var(--texto);
-  border-radius: 10px;
-  padding: 9px 12px;
+  background: var(--blanco);
+  border: 3px solid var(--negro);
+  color: var(--negro);
+  padding: 12px 12px;
   font-size: 14px;
-  font-family: inherit;
+  font-weight: 700;
+  font-family: var(--cuerpo);
   cursor: pointer;
-  transition: .15s;
+  transition: none;
 }
-.opciones button:hover { border-color: #46506a; }
+.opciones button:hover { background: var(--celeste); }
+.opciones button:active { filter: brightness(.88); }
 .opciones button.sel {
-  background: var(--acento);
-  border-color: var(--acento);
-  color: #17191f;
-  font-weight: 600;
+  background: var(--amarillo);
+  box-shadow: inset 0 0 0 3px var(--blanco);
 }
 
 .primario {
   width: 100%;
-  background: var(--acento);
-  color: #17191f;
-  border: none;
-  border-radius: 12px;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  font-family: inherit;
+  background: var(--naranja);
+  color: var(--blanco);
+  border: 4px solid var(--negro);
+  padding: 15px;
+  font-family: var(--pixel);
+  font-size: 13px;
   cursor: pointer;
-  margin-top: 6px;
+  margin-top: 8px;
 }
-.primario:hover { filter: brightness(1.08); }
-.primario:disabled { opacity: .45; cursor: default; }
+.primario:hover { background: #FF6E3D; }
+.primario:active { filter: brightness(.85); }
+.primario:disabled { opacity: .5; cursor: default; }
 
-.aviso-progreso { color: var(--muted); font-size: 12px; text-align: center; margin: 14px 0 0; }
+/* Acción secundaria: mismo peso de botón, menos jerarquía de color */
+.primario.secundario {
+  background: var(--amarillo);
+  color: var(--negro);
+}
+.primario.secundario:hover { background: #FFE05C; }
+
+/* El botón cierra el formulario: necesita aire propio arriba */
+.inicio-box .primario { margin-top: 38px; }
+
+.aviso-progreso {
+  font-family: var(--pixel);
+  font-size: 8px;
+  line-height: 2.1;
+  text-align: center;
+  color: var(--muted);
+  margin: 26px 0 0;
+}
 
 /* ---------------- HUD ---------------- */
-#hud { padding: 4px 2px 14px; }
+#hud {
+  background: var(--negro);
+  border: var(--borde);
+  padding: 12px 12px 10px;
+  margin-bottom: 16px;
+  box-shadow: var(--sombra-chica);
+}
 
 #stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.stat { text-align: center; }
-.stat .ico { font-size: 17px; line-height: 1; }
+.stat { text-align: center; cursor: help; }
+.stat .ico { display: flex; justify-content: center; line-height: 0; }
+.stat .ico svg { width: 22px; height: 22px; display: block; }
+
+/* Barra segmentada, como una vida de arcade. Sin número: el valor exacto
+   vive en el tooltip. */
 .stat .barra {
-  height: 6px;
-  background: #232a36;
-  border-radius: 4px;
-  margin-top: 6px;
+  height: 14px;
+  background: #33322D;
+  margin-top: 8px;
+  border: 2px solid var(--negro);
   overflow: hidden;
+  position: relative;
 }
-.stat .barra i { display: block; height: 100%; border-radius: 4px; transition: width .5s cubic-bezier(.2,.8,.2,1); }
-.stat .val { font-size: 11px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
-.stat.pulso .ico { animation: pulso .5s ease; }
-@keyframes pulso { 0%{transform:scale(1)} 40%{transform:scale(1.45)} 100%{transform:scale(1)} }
+.stat .barra i {
+  display: block;
+  height: 100%;
+  transition: width .35s steps(10, end);
+}
+.stat .barra::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg, transparent 0 6px, var(--negro) 6px 8px);
+  pointer-events: none;
+}
+.stat.pulso .ico { animation: pulso .45s steps(3); }
+.stat.baja .ico { animation: baja .45s steps(3); }
+@keyframes pulso { 0%{transform:none} 45%{transform:translateY(-5px) scale(1.25)} 100%{transform:none} }
+@keyframes baja  { 0%{transform:none} 45%{transform:translateY(5px) scale(.8)} 100%{transform:none} }
 
 #progreso {
   display: flex; align-items: center; gap: 10px;
-  margin-top: 16px; font-size: 12px; color: var(--muted);
+  margin-top: 12px;
+  font-family: var(--pixel);
+  font-size: 8px;
+  color: var(--amarillo);
+  text-transform: uppercase;
 }
-.barra-rondas { flex: 1; height: 3px; background: #232a36; border-radius: 3px; overflow: hidden; }
-#barra-rondas-fill { height: 100%; width: 0; background: var(--acento); transition: width .4s; }
+.barra-rondas { flex: 1; height: 8px; background: #33322D; border: 2px solid #33322D; }
+#barra-rondas-fill {
+  height: 100%;
+  width: 0;
+  background: var(--amarillo);
+  transition: width .3s steps(8, end);
+}
 
 /* ---------------- Carta ---------------- */
-#escenario { position: relative; min-height: 340px; display: flex; align-items: stretch; }
+#escenario { position: relative; min-height: 360px; display: flex; align-items: stretch; }
 
 .carta {
   width: 100%;
-  background: linear-gradient(160deg, #212736, #171b24);
-  border: 1px solid var(--borde);
-  border-radius: 20px;
-  padding: 26px 24px;
+  background: var(--panel);
+  border: var(--borde);
+  padding: 0 0 22px;
   box-shadow: var(--sombra);
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-height: 340px;
+  min-height: 360px;
+  /* Sin overflow:hidden. Con esquinas rectas no hay nada que recortar, y
+     recortaba el minijuego, que es más alto que los 360px del contenedor. */
 }
-.carta.arrastrando { transition: none; cursor: grabbing; }
-.carta.animada { transition: transform .35s ease, opacity .35s ease; }
+.carta.arrastrando { cursor: grabbing; }
+.carta.animada { transition: transform .3s steps(6, end), opacity .3s; }
 
 /* ---------------- Ilustraciones ---------------- */
+/* Franja de color arriba: el tinte cambia según la categoría del evento */
 .ilustracion {
   display: flex;
   justify-content: center;
-  margin-bottom: 16px;
-  color: var(--texto);
+  align-items: flex-end;
+  padding: 18px 0 14px;
+  background: var(--tinte, var(--amarillo));
+  border-bottom: 4px solid var(--negro);
+  color: var(--negro);
   pointer-events: none;
 }
 .ilustracion svg {
-  width: 132px;
-  height: 132px;
+  width: 128px;
+  height: 128px;
   display: block;
-  filter: drop-shadow(0 6px 18px rgba(0,0,0,.45));
-  animation: entrar-ilu .45s cubic-bezier(.2,.9,.3,1) both;
+  animation: entrar-ilu .28s steps(4, end) both;
 }
-.ilustracion.chica svg { width: 84px; height: 84px; margin-bottom: -6px; }
-.ilustracion.grande svg { width: 150px; height: 150px; }
+.ilustracion.chica { padding: 12px 0 10px; }
+.ilustracion.chica svg { width: 86px; height: 86px; }
+.ilustracion.grande svg { width: 148px; height: 148px; }
 
 @keyframes entrar-ilu {
-  from { opacity: 0; transform: translateY(10px) scale(.94); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: none; }
 }
 
-/* En los avisos la ilustración va en el azul del aviso */
-.carta.aviso .ilustracion { color: #7aa2f7; }
+/* Tintes por categoría, tomados del póster */
+.carta[data-cat="generales"],    .ilustracion[data-cat="generales"]    { --tinte: var(--amarillo); }
+.carta[data-cat="guita"],        .ilustracion[data-cat="guita"]        { --tinte: var(--verde-claro); }
+.carta[data-cat="conocimiento"], .ilustracion[data-cat="conocimiento"] { --tinte: var(--celeste); }
+.carta[data-cat="fama"],         .ilustracion[data-cat="fama"]         { --tinte: var(--naranja); }
+.carta[data-cat="politica"],     .ilustracion[data-cat="politica"]     { --tinte: var(--azul-suave); }
+.carta[data-cat="aviso"],        .ilustracion[data-cat="aviso"]        { --tinte: var(--beige); }
+.carta[data-cat="minijuego"],    .ilustracion[data-cat="minijuego"]    { --tinte: var(--azul-medio); }
 
 .carta-personaje {
-  font-size: 11px;
-  letter-spacing: 2px;
+  font-family: var(--pixel);
+  font-size: 8px;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--acento);
-  margin-bottom: 10px;
+  color: var(--blanco);
+  background: var(--negro);
+  align-self: center;
+  padding: 6px 12px;
+  margin: -1px 0 14px;
   text-align: center;
 }
-.carta h2 { margin: 0 0 12px; font-size: 21px; line-height: 1.3; text-align: center; }
-.carta p { margin: 0; font-size: 16px; color: #cfd5e2; }
+.carta h2 {
+  margin: 0 22px 12px;
+  font-family: var(--titulo);
+  font-size: 23px;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--negro);
+}
+.carta p {
+  margin: 0 22px;
+  font-size: 15.5px;
+  color: #24211C;
+  font-weight: 500;
+}
 
-.carta.aviso { border-color: #3c4a63; background: linear-gradient(160deg, #1e2634, #151a22); }
-.carta.aviso .carta-personaje { color: #7aa2f7; }
+/* El aviso se distingue con marco doble */
+.carta.aviso { box-shadow: var(--sombra), inset 0 0 0 4px var(--naranja); }
 
 .hint-swipe {
-  position: absolute; top: 18px;
-  font-size: 12px; letter-spacing: 1px; text-transform: uppercase;
-  color: var(--acento); opacity: 0; transition: opacity .15s;
-  max-width: 45%;
+  position: absolute; top: 176px;
+  font-family: var(--pixel);
+  font-size: 8px; line-height: 1.7;
+  text-transform: uppercase;
+  color: var(--blanco);
+  background: var(--negro);
+  padding: 6px 8px;
+  opacity: 0;
+  max-width: 42%;
+  z-index: 3;
 }
-#hint-izq { left: 20px; text-align: left; }
-#hint-der { right: 20px; text-align: right; }
+#hint-izq { left: 10px; text-align: left; }
+#hint-der { right: 10px; text-align: right; }
 
 /* ---------------- Respuestas ---------------- */
-#respuestas { display: flex; flex-direction: column; gap: 9px; margin-top: 16px; padding-bottom: 20px; }
+#respuestas { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
 .respuesta {
-  background: var(--panel);
-  border: 1px solid var(--borde);
-  color: var(--texto);
-  border-radius: 12px;
-  padding: 13px 16px;
+  background: var(--amarillo);
+  border: 4px solid var(--negro);
+  color: var(--negro);
+  padding: 13px 15px;
   font-size: 15px;
-  font-family: inherit;
+  font-weight: 700;
+  font-family: var(--cuerpo);
   text-align: left;
   cursor: pointer;
-  transition: .15s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.respuesta:hover { border-color: var(--acento); transform: translateX(3px); }
-.respuesta .num { color: var(--muted); font-size: 12px; margin-right: 9px; }
+.respuesta:hover { background: var(--celeste); }
+.respuesta:active { filter: brightness(.88); }
+.respuesta .num {
+  font-family: var(--pixel);
+  font-size: 11px;
+  background: var(--negro);
+  color: var(--amarillo);
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  flex: 0 0 26px;
+  margin: 0;
+}
 
 /* ---------------- Resultado ---------------- */
-.resultado { position: absolute; inset: 0; z-index: 5; }
-.resultado p { font-size: 17px; margin-bottom: 18px; }
-.deltas { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-.delta {
-  font-size: 13px; font-weight: 700;
-  padding: 5px 11px; border-radius: 999px;
-  background: #232a36;
-  font-variant-numeric: tabular-nums;
+/* El resultado sí tapa la carta, pero puede crecer si el texto es largo:
+   se ancla arriba en vez de estirarse entre top y bottom. */
+.resultado {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 5;
+  min-height: 100%;
+  justify-content: center;
+  padding: 26px 22px;
+  background: var(--panel);
 }
-.delta.pos { color: var(--ok); }
-.delta.neg { color: var(--mal); }
+.resultado p { font-size: 17px; margin: 0 0 20px; font-weight: 600; }
+.deltas { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.delta {
+  font-family: var(--pixel);
+  font-size: 11px;
+  padding: 7px 10px;
+  border: 3px solid var(--negro);
+  background: var(--blanco);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.delta-ico { line-height: 0; }
+.delta-ico svg { width: 17px; height: 17px; display: block; }
+.delta.pos { background: var(--verde-claro); color: #2B6B1F; }
+.delta.neg { background: #FFC9BA; color: #A32E11; }
 
-/* ---------------- Minijuego ---------------- */
-.minijuego { position: absolute; inset: 0; z-index: 6; text-align: center; }
+/* ---------------- Minijuego ----------------
+   El minijuego REEMPLAZA a la carta, no la tapa: va en el flujo normal y
+   el contenedor crece con él. Como overlay quedaba recortado a 360px y el
+   botón "Jugar" caía fuera de la pantalla. */
+.minijuego { text-align: center; padding-bottom: 20px; }
 .mj-tag {
   align-self: center;
-  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
-  color: #17191f; background: var(--acento);
-  padding: 3px 10px; border-radius: 999px; margin-bottom: 14px;
+  font-family: var(--pixel);
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--negro); background: var(--amarillo);
+  border: 3px solid var(--negro);
+  padding: 6px 12px; margin: 14px 0 0;
 }
-.minijuego h2 { text-align: center; }
+.minijuego h2 { text-align: center; margin-top: 12px; }
 .minijuego p { text-align: center; color: var(--muted); font-size: 14px; }
-#mj-area { margin: 22px 0 10px; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; }
-#mj-estado { font-size: 13px; color: var(--muted); min-height: 20px; }
-
-.pista { width: 100%; height: 34px; background: #232a36; border-radius: 8px; position: relative; overflow: hidden; }
-.zona { position: absolute; top: 0; bottom: 0; background: rgba(158,206,106,.28); border-left: 2px solid var(--ok); border-right: 2px solid var(--ok); }
-.aguja { position: absolute; top: -4px; bottom: -4px; width: 3px; background: var(--acento); box-shadow: 0 0 12px var(--acento); }
-
-.boton-mj {
-  width: 130px; height: 130px; border-radius: 50%;
-  background: var(--acento); color: #17191f;
-  border: none; font-size: 17px; font-weight: 800; font-family: inherit;
-  cursor: pointer; user-select: none;
+#mj-area {
+  margin: 20px 22px 8px; min-height: 120px;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px;
 }
-.boton-mj:active { transform: scale(.94); }
-
-.grilla { display: grid; grid-template-columns: repeat(2, 82px); gap: 12px; justify-content: center; }
-.celda {
-  width: 82px; height: 82px; border-radius: 14px;
-  background: #2a3140; border: 2px solid transparent;
-  cursor: pointer; transition: .12s;
+#mj-estado {
+  font-family: var(--pixel); font-size: 10px;
+  color: var(--negro); min-height: 20px;
 }
-.celda.on { background: var(--acento); border-color: #fff3; transform: scale(1.05); }
-.celda.mal { background: var(--mal); }
+.minijuego .primario { width: calc(100% - 44px); margin: 10px auto 0; }
+
+/* --- Piezas compartidas por varios minijuegos --- */
+.op-mj {
+  background: var(--blanco);
+  border: 3px solid var(--negro);
+  color: var(--negro);
+  padding: 12px 14px;
+  font-size: 15px; font-weight: 700;
+  font-family: var(--cuerpo);
+  cursor: pointer; text-align: left;
+}
+.op-mj:hover { background: var(--celeste); }
+.op-mj.bien { background: var(--verde); }
+.op-mj.mal  { background: var(--naranja); color: var(--blanco); }
+.opciones-mj { display: flex; flex-direction: column; gap: 9px; width: 100%; }
+
+.input-mj {
+  flex: 1;
+  background: #F4F2E9;
+  border: 3px solid var(--negro);
+  padding: 12px 13px;
+  font-size: 17px; font-weight: 700;
+  font-family: var(--cuerpo);
+  text-align: center;
+}
+.input-mj:focus { outline: none; background: var(--amarillo); }
+.input-mj.bien { background: var(--verde); }
+.input-mj.mal  { background: var(--naranja); color: var(--blanco); }
+.fila-input { display: flex; gap: 9px; width: 100%; }
+.op-mj.enviar { flex: 0 0 62px; text-align: center; font-family: var(--pixel); font-size: 11px; }
+
+.palabra {
+  font-family: var(--titulo);
+  font-size: 27px;
+  text-transform: lowercase;
+  background: var(--amarillo);
+  border: 4px solid var(--negro);
+  padding: 12px 18px;
+  margin-bottom: 4px;
+}
+.como-suena {
+  font-family: var(--titulo);
+  font-size: 25px;
+  color: var(--naranja);
+  -webkit-text-stroke: 2px var(--negro);
+  paint-order: stroke fill;
+  margin-bottom: 4px;
+}
+
+/* --- 1. Tres en línea --- */
+.ttt { display: grid; grid-template-columns: repeat(3, 74px); gap: 6px; justify-content: center; }
+.ttt-c {
+  width: 74px; height: 74px;
+  background: var(--blanco);
+  border: 4px solid var(--negro);
+  font-family: var(--titulo);
+  font-size: 34px; line-height: 1;
+  color: var(--azul); cursor: pointer;
+}
+.ttt-c:hover:not(.ocupada) { background: var(--celeste); }
+.ttt-c.rival { color: var(--naranja); }
+.ttt-c.ocupada { cursor: default; }
+.ttt-c.gana { background: var(--amarillo); }
+
+/* --- 2. Memo test --- */
+.memo { display: grid; gap: 8px; justify-content: center; }
+.memo-c {
+  width: 66px; height: 66px;
+  background: var(--azul-suave);
+  border: 4px solid var(--negro);
+  font-family: var(--titulo);
+  font-size: 26px; color: var(--negro);
+  cursor: pointer;
+}
+.memo-c.vista { background: var(--amarillo); }
+.memo-c.lista { background: var(--verde); cursor: default; }
+
+/* --- 4. Sopa de letras --- */
+.sopa { display: grid; gap: 3px; justify-content: center; }
+.sopa-c {
+  width: 33px; height: 33px;
+  background: var(--blanco);
+  border: 2px solid var(--negro);
+  font-family: var(--pixel); font-size: 11px;
+  color: var(--negro); cursor: pointer; padding: 0;
+}
+.sopa-c:hover { background: var(--celeste); }
+.sopa-c.sel { background: var(--amarillo); }
+.sopa-c.hallada { background: var(--verde); }
+.sopa-lista { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 4px; }
+.sopa-w {
+  font-family: var(--pixel); font-size: 9px;
+  border: 2px solid var(--negro); padding: 5px 8px;
+  background: var(--blanco);
+}
+.sopa-w.hallada { background: var(--verde); text-decoration: line-through; }
+
+/* --- 5. Crucigrama --- */
+.cruci { display: grid; gap: 3px; justify-content: center; }
+.cruci-x { width: 34px; height: 34px; }
+.cruci-c {
+  width: 34px; height: 34px;
+  background: var(--blanco);
+  border: 3px solid var(--negro);
+  font-family: var(--pixel); font-size: 12px;
+  text-align: center; text-transform: uppercase;
+  color: var(--negro); padding: 0;
+}
+.cruci-c:focus { outline: none; background: var(--amarillo); }
+.cruci-c.bien { background: var(--verde); }
+.pistas { margin-top: 12px; text-align: left; width: 100%; }
+.pista { font-size: 13px; font-weight: 600; color: #3A362F; margin-bottom: 5px; }
+
+/* --- 7. Conector de puntos --- */
+.puntos { width: 100%; height: auto; background: var(--blanco); border: 4px solid var(--negro); }
+.punto { cursor: pointer; }
+.punto circle { fill: var(--blanco); stroke: var(--negro); stroke-width: 2; }
+.punto text { font-family: var(--pixel); font-size: 5px; fill: var(--negro); }
+.punto:hover circle { fill: var(--celeste); }
+.punto.hecho circle { fill: var(--amarillo); }
+.punto.error circle { fill: var(--naranja); }
+.puntos-linea { fill: none; stroke: var(--azul); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+
+/* --- 8. Saltar el molinete --- */
+.runner {
+  width: 100%; height: auto;
+  background: var(--celeste);
+  border: 4px solid var(--negro);
+  cursor: pointer; touch-action: manipulation;
+}
 
 /* ---------------- Final ---------------- */
 .final-box {
-  margin-top: 6vh;
+  margin-top: 4vh;
   background: var(--panel);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  padding: 32px 26px;
+  border: var(--borde);
+  padding: 0 0 26px;
   box-shadow: var(--sombra);
   text-align: center;
+  overflow: hidden;
 }
 .final-sello {
-  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 10px;
+  font-family: var(--pixel);
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--blanco); background: var(--negro);
+  display: inline-block;
+  padding: 7px 14px;
+  margin: 18px 0 14px;
 }
-.final-box h1 { margin: 0 0 16px; font-size: 27px; color: var(--acento); }
-.final-box > p { color: #cfd5e2; text-align: left; margin: 0 0 24px; }
+.final-box h1 {
+  margin: 0 22px 18px;
+  font-family: var(--titulo);
+  font-size: 30px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--naranja);
+  -webkit-text-stroke: 2.5px var(--negro);
+  paint-order: stroke fill;
+}
+.final-box > p {
+  color: #24211C; text-align: left;
+  margin: 0 22px 24px;
+  font-size: 15.5px; font-weight: 500;
+}
 
-.final-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
-.final-stats .fs { background: var(--bg2); border-radius: 10px; padding: 10px 4px; }
-.final-stats .fs b { display: block; font-size: 19px; font-variant-numeric: tabular-nums; }
-.final-stats .fs span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+.final-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 22px 22px; }
+.final-stats .fs { background: var(--negro); padding: 11px 4px 10px; }
+.final-stats .fs-ico { display: block; line-height: 0; margin-bottom: 8px; }
+.final-stats .fs-ico svg { width: 20px; height: 20px; display: inline-block; }
+.final-stats .fs b {
+  display: block;
+  font-family: var(--pixel);
+  font-size: 15px;
+}
+.final-stats .fs-nom {
+  display: block;
+  font-family: var(--pixel);
+  font-size: 6.5px;
+  color: #B9B7AE;
+  text-transform: uppercase;
+  margin-top: 7px;
+}
 
-.resumen { text-align: left; margin-bottom: 20px; }
-.resumen summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
-.resumen ol { padding-left: 20px; margin: 0; }
-.resumen li { font-size: 13px; margin-bottom: 12px; color: #b9c1d1; }
-.resumen li b { color: var(--texto); }
+.resumen { text-align: left; margin: 0 22px 22px; }
+.resumen summary {
+  cursor: pointer;
+  font-family: var(--pixel); font-size: 9px;
+  background: var(--amarillo);
+  border: 3px solid var(--negro);
+  padding: 10px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.resumen ol { padding-left: 22px; margin: 0; }
+.resumen li { font-size: 14px; margin-bottom: 14px; color: #3A362F; }
+.resumen li b { color: var(--negro); }
 .resumen li em { color: var(--muted); font-style: normal; }
+.resumen li small { font-family: var(--pixel); font-size: 8px; }
+.final-box .primario { width: calc(100% - 44px); margin: 0 auto; display: block; }
+.final-box .primario + .primario { margin-top: 12px; }
+
+/* =====================================================================
+   Transición de instancia: cortina de bloques en diagonal.
+   Los bloques entran de a uno con retraso creciente, tapan la pantalla,
+   se cambia el fondo por debajo y se retiran con el mismo barrido.
+   ===================================================================== */
+.transicion {
+  position: fixed; inset: 0;
+  z-index: 60;
+  display: none;
+  pointer-events: none;
+}
+.transicion.activa { display: block; pointer-events: auto; }
+
+.tr-grid { position: absolute; inset: 0; display: grid; }
+.tr-grid i {
+  background: var(--tr-color, var(--negro));
+  transform: scale(0);
+  transform-origin: center;
+}
+.tr-grid i.entra { animation: tr-entra .16s steps(2, end) var(--d) forwards; }
+.tr-grid i.sale  { transform: scale(1); animation: tr-sale .16s steps(2, end) var(--d) forwards; }
+
+@keyframes tr-entra { to { transform: scale(1); } }
+@keyframes tr-sale  { to { transform: scale(0); } }
+
+.tr-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--pixel);
+  font-size: 22px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amarillo);
+  text-shadow: 5px 5px 0 var(--negro);
+  opacity: 0;
+}
+.tr-label.visible { animation: tr-label .62s steps(6, end); }
+@keyframes tr-label {
+  0%   { opacity: 0; transform: scale(.7); }
+  25%  { opacity: 1; transform: scale(1); }
+  75%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tr-grid i.entra, .tr-grid i.sale { animation-duration: .01s; animation-delay: 0s; }
+  .tr-label.visible { animation-duration: .3s; }
+}
+
+/* En pantallas bajas se comprime la separación para no obligar a scrollear
+   toda la pantalla de inicio */
+@media (max-height: 820px) {
+  .inicio-box { margin-top: 2vh; padding: 26px 24px 24px; }
+  .inicio-box h1 { margin-bottom: 12px; }
+  .sub { padding-bottom: 22px; margin-bottom: 26px; }
+  .campo + .campo { margin-top: 24px; padding-top: 22px; }
+  .inicio-box .primario { margin-top: 28px; }
+  .aviso-progreso { margin-top: 20px; }
+}
 
 @media (max-width: 420px) {
-  .carta { padding: 22px 18px; min-height: 300px; }
-  .carta h2 { font-size: 19px; }
+  .inicio-box h1 { font-size: 30px; }
+  .carta h2 { font-size: 20px; margin-left: 16px; margin-right: 16px; }
+  .carta p { margin: 0 16px; font-size: 15px; }
+  .grilla { grid-template-columns: repeat(2, 74px); }
+  .celda { width: 74px; height: 74px; }
 }

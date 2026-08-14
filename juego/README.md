@@ -80,6 +80,66 @@ public/
 test/simular.js  simulador de partidas con chequeo de invariantes
 ```
 
+## Estética
+
+Arcade noventoso con la paleta de The Simpsons: bloques planos, contornos negros de 4px,
+sombras duras sin blur y esquinas rectas. El fondo lleva una cuadrícula de 18px que da la
+textura pixelada.
+
+### El fondo cambia con la instancia de la carrera
+
+Cada fase tiene su color, y la progresión va de claro a oscuro: entrás con luz y terminás
+de noche.
+
+| Fase | Color | |
+|---|---|---|
+| Ingresante | `#2C6157` | verde profundo de aula |
+| Intermedio | `#24486E` | azul noche |
+| Avanzado | `#4A2A46` | berenjena |
+
+El cambio no es un fundido: es una **cortina de bloques en diagonal**. Los cuadrados entran
+de a uno con retraso creciente hasta tapar la pantalla, ahí abajo se cambia el fondo y
+aparece el nombre de la instancia, y después la cortina se retira con el mismo barrido.
+Todas las animaciones usan `steps()` para que se muevan a saltos, no suave.
+
+Se ajusta desde `cambiarFase()` en `public/app.js` (`COLS`, `PASO`, `DUR`) y respeta
+`prefers-reduced-motion`.
+
+### Paleta
+
+| Rol | Color |
+|---|---|
+| Amarillo | `#FFD520` — respuestas, franja de eventos generales |
+| Naranja | `#F05A28` — botones primarios, títulos de final |
+| Azul / celeste | `#0D7DC1` · `#6DCFF6` · `#2FA8D5` |
+| Verde | `#7AC143` · `#CDE6A5` |
+| Beige | `#D3B183` — avisos |
+| Negro | `#12100E` — contornos y HUD |
+
+Cada carta lleva arriba una **franja de color según la categoría del evento**, y la
+ilustración se recorta en blanco sobre esa franja:
+
+```
+generales  amarillo    fama       naranja       aviso      beige
+guita      verde claro politica   azul suave    minijuego  azul medio
+conocimiento celeste
+```
+
+### HUD
+
+Las barras de stats son segmentadas, como una vida de arcade, y **no llevan número**: la
+barra es la única lectura y el valor exacto queda en el tooltip. Cuando un stat cambia, su
+ícono salta hacia arriba si subió y se hunde si bajó.
+
+Los íconos son **dibujo propio**, no emojis: moneda, libro abierto, estrella y puño.
+Viven en `ICONOS` dentro de `public/ilustraciones.js` y se referencian desde
+`db/contenido.js` con `icono: 'moneda'`. A 22px un emoji se renderiza a color y rompe el
+registro del resto de la interfaz.
+
+Tipografías: **Press Start 2P** para HUD, etiquetas y botones, y **Archivo Black** para
+los títulos. Se cargan de Google Fonts; sin internet caen a `Courier New` y `Arial Black`,
+que mantienen el aire pero pierden el pixelado.
+
 ## Ilustraciones
 
 Son 16 dibujos SVG de línea, monocromos, al estilo REIGNS. **Se repiten a propósito**:
@@ -91,15 +151,57 @@ profesor  estudiante  multitud  plaza     bondi   libro   plata   camara
 facultad  afiche      comida    noche     sobre   alerta  puerta  birrete
 ```
 
-Viven en `public/ilustraciones.js`, sin dependencias ni archivos de imagen. Heredan el
-color del texto (`currentColor`), así que funcionan sobre fondo claro u oscuro; en los
-avisos se pintan del azul del aviso. Los estilos van como atributos y no como clases CSS,
-para que el SVG se vea igual si lo abrís suelto o lo exportás.
+Viven en `public/ilustraciones.js`, sin dependencias ni archivos de imagen. El contorno
+hereda el color del texto (`currentColor`, negro en las cartas) y las masas se rellenan
+con `--ilu-masa` (blanco por defecto), así que la figura se recorta sobre la franja de
+color. Los estilos van como atributos y no como clases CSS, para que el SVG se vea igual
+si lo abrís suelto o lo exportás.
 
 Para asignar o cambiar el dibujo de un evento, alcanza con `ilustracion: 'libro'` en
 `db/contenido.js` y volver a correr `npm run seed`. Si el código no existe, se usa
 `facultad` como fallback. Para agregar un dibujo nuevo, sumalo al objeto `ILUSTRACIONES`
 con un `viewBox="0 0 200 200"` y trazo de 3.4.
+
+## Minijuegos
+
+Los ocho del documento, uno por mecánica. Se sortean **3 por partida**, uno por fase,
+entre los ocho — ninguno se repite dentro de la misma partida.
+
+| Mecánica | Minijuego | Cómo se juega | Puntaje |
+|---|---|---|---|
+| `tres_en_linea` | Tres en línea contra la otra lista | Sos las X contra una IA que juega bien el 65% de las veces | ganar 100 · empate 55 · perder 15 |
+| `memotest` | Memo test de autores | 4 pares, se dan vuelta de a dos | 100 menos 12 por cada intento de más |
+| `traducir` | Traducir el paper | 5 términos en inglés, 3 opciones cada uno | aciertos / 5 |
+| `sopa` | Sopa de letras de la cátedra | Grilla 8x8, clic en la primera y la última letra | halladas / 3, **45s** |
+| `crucigrama` | Parcial contrarreloj | 3 palabras que se cruzan, una letra por casillero | letras correctas, **60s** |
+| `apellidos` | Escribir bien los apellidos | Se muestra «Bordié», hay que escribir Bourdieu | aciertos / 4 |
+| `conectar` | El mapa conceptual | Unir 9 puntos en orden | 100 menos 14 por error |
+| `molinete` | Saltar el molinete | Corredor tipo dino: clic o barra para saltar | molinetes pasados / 10 |
+
+**Sopa y crucigrama llevan reloj** porque son los únicos que se pueden no resolver: sin
+límite de tiempo, alguien que no encuentra las palabras queda trabado en la pantalla para
+siempre. Al vencer se entrega lo que haya, que es justo lo que dice el mensaje de fallo
+del parcial.
+
+Todo el contenido de cada juego —las palabras a traducir, los autores, las pistas del
+crucigrama, la astucia del rival— vive en el `config` de `db/contenido.js`, así se edita
+sin tocar el front. Las mecánicas están en el objeto `MECANICAS` de `public/app.js`: cada
+una recibe `(config, listo)` y devuelve un puntaje de 0 a 100.
+
+### Compartir el resultado
+
+La pantalla final tiene un botón que exporta la partida como imagen. No captura el DOM
+ni usa librerías: **la placa se dibuja en un canvas**, con la banda de color, la
+ilustración del final, el texto y los cuatro stats. Sale a 1080px de ancho, en 2x.
+
+- Las ilustraciones y los íconos se inyectan como SVG con los colores ya resueltos
+  (`currentColor` y `--ilu-masa` no existen dentro de un `<img>`).
+- Espera a `document.fonts.ready` antes de dibujar: si no, el canvas usa la tipografía
+  del sistema y la placa sale con otra letra.
+- En celular abre el menú nativo de compartir (`navigator.share` con archivos); en
+  escritorio descarga el PNG. Cancelar el menú no se trata como error.
+
+Está en `exportarImagen()` / `construirPlaca()` en `public/app.js`.
 
 ## Cómo funciona una partida
 
@@ -131,7 +233,7 @@ Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a 
 | Respuestas | 102 (entre 1 y 4 por evento) |
 | Efectos | 125, con pesos probabilísticos y algunos condicionales |
 | Salida de carrera | 1 sola: la tercera respuesta de "No alcanza para nada" (beca Sarmiento) |
-| Minijuegos | 7, sobre 3 mecánicas genéricas |
+| Minijuegos | 8, uno por mecánica — se sortean 3 por partida |
 | Finales | 10: 4 de un stat dominante, 3 combinados, el secreto, el de abandono y el default |
 | Historias | 0 — el documento todavía no encadena eventos; la maquinaria queda lista |
 

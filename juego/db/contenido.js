@@ -17,13 +17,15 @@ const G = (m, f, nb) => ({ m, f, nb });
 // ---------------------------------------------------------------------
 // STATS — los cuatro del documento, en su orden, más uno oculto.
 // ---------------------------------------------------------------------
+// Colores de la paleta del póster. `icono` es el código de un dibujo propio
+// de public/ilustraciones.js — no un emoji.
 const stats = [
-  { codigo: 'guita',        nombre: 'Guita',        icono: '$',  color: '#9ece6a', valor_inicial: 40, orden: 1, descripcion: 'Lo que te queda en el bolsillo.' },
-  { codigo: 'conocimiento', nombre: 'Conocimiento', icono: '📚', color: '#7aa2f7', valor_inicial: 35, orden: 2, descripcion: 'Lo que realmente aprendiste.' },
-  { codigo: 'fama',         nombre: 'Fama',         icono: '★',  color: '#f7768e', valor_inicial: 20, orden: 3, descripcion: 'Cuánta gente sabe quién sos en Sociales.' },
-  { codigo: 'politica',     nombre: 'Política',     icono: '✊', color: '#bb9af7', valor_inicial: 20, orden: 4, descripcion: 'Tu peso dentro de la rosca estudiantil.' },
+  { codigo: 'guita',        nombre: 'Guita',        icono: 'moneda',   color: '#7AC143', valor_inicial: 40, orden: 1, descripcion: 'Lo que te queda en el bolsillo.' },
+  { codigo: 'conocimiento', nombre: 'Conocimiento', icono: 'libro',    color: '#2FA8D5', valor_inicial: 35, orden: 2, descripcion: 'Lo que realmente aprendiste.' },
+  { codigo: 'fama',         nombre: 'Fama',         icono: 'estrella', color: '#FFD520', valor_inicial: 20, orden: 3, descripcion: 'Cuánta gente sabe quién sos en Sociales.' },
+  { codigo: 'politica',     nombre: 'Política',     icono: 'puno',     color: '#F05A28', valor_inicial: 20, orden: 4, descripcion: 'Tu peso dentro de la rosca estudiantil.' },
   // Oculto: alimenta el secret ending. No se muestra en el HUD.
-  { codigo: 'violencia',    nombre: 'Violencia',    icono: '🔥', color: '#ff5555', valor_inicial: 0,  orden: 5, visible: false, descripcion: 'Escalada de violencia política. Invisible para el jugador.' },
+  { codigo: 'violencia',    nombre: 'Violencia',    icono: 'chispa',   color: '#D9401C', valor_inicial: 0,  orden: 5, visible: false, descripcion: 'Escalada de violencia política. Invisible para el jugador.' },
 ];
 
 // ---------------------------------------------------------------------
@@ -824,91 +826,156 @@ const eventos = [
 // Acá están implementados sobre tres mecánicas genéricas; reemplazar
 // cada uno por su mecánica real es trabajo aparte.
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// MINIJUEGOS — los ocho del documento, uno por mecánica.
+// Se sortean 3 por partida, uno por fase, entre todos. No consumen ronda.
+// El contenido de cada juego (palabras, autores, pistas) vive en `config`,
+// así se edita desde acá sin tocar el front.
+// ---------------------------------------------------------------------
 const minijuegos = [
+
   {
-    codigo: 'mj_memotest', ilustracion: 'libro', nombre: 'Memo test de autores', mecanica: 'memoria',
-    descripcion: 'Repetí la secuencia en el orden correcto.',
-    instrucciones: T('Mirá la secuencia y repetila clickeando en el mismo orden.'),
-    fases: ['ingresante', 'intermedio', 'avanzado'], config: { largo: 5, celdas: 4 },
+    codigo: 'mj_tresenlinea', ilustracion: 'multitud', mecanica: 'tres_en_linea',
+    nombre: 'Tres en línea contra la otra lista',
+    descripcion: 'Duelo de pizarrón en el medio de la asamblea.',
+    instrucciones: T('Sos las X. Hacé tres en línea antes que la otra lista.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: { astucia: 0.65 },
+    resultados: [
+      { codigo: 'exito',   min: 70, max: 100, texto: T('Aplauso cerrado.'),                  stats: { politica: 12, fama: 10 } },
+      { codigo: 'parcial', min: 35, max: 69,  texto: T('Aplauso tibio.'),                    stats: { politica: 4, fama: 3 } },
+      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Te seguiste de largo y se fueron.'), stats: { politica: -6, fama: -6 } },
+    ],
+  },
+
+  {
+    codigo: 'mj_memotest', ilustracion: 'libro', mecanica: 'memotest',
+    nombre: 'Memo test de autores',
+    descripcion: 'Encontrá los pares antes de gastar todos los intentos.',
+    instrucciones: T('Dale vuelta las fichas de a dos y encontrá los pares.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: { pares: 4, columnas: 4, simbolos: ['W', 'M', 'D', 'G', 'B', 'F'] },
     resultados: [
       { codigo: 'exito',   min: 80, max: 100, texto: T('Te acordás hasta de los apellidos con tilde.'), stats: { conocimiento: 14 } },
-      { codigo: 'parcial', min: 40, max: 79,  texto: T('La mitad te quedó.'),                          stats: { conocimiento: 6 } },
-      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('En blanco total.'),                            stats: { conocimiento: -5 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('La mitad te quedó.'),                           stats: { conocimiento: 6 } },
+      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('En blanco total.'),                             stats: { conocimiento: -5 } },
     ],
   },
+
   {
-    codigo: 'mj_apellidos', ilustracion: 'libro', nombre: 'Escribir bien los apellidos', mecanica: 'memoria',
-    descripcion: 'Bourdieu, Durkheim, Boltanski. En orden.',
-    instrucciones: T('Repetí la secuencia de autores en el orden correcto.'),
-    fases: ['intermedio', 'avanzado'], config: { largo: 6, celdas: 4 },
+    codigo: 'mj_traducir', ilustracion: 'libro', mecanica: 'traducir',
+    nombre: 'Traducir el paper',
+    descripcion: 'La cátedra lo subió en inglés y el parcial es el jueves.',
+    instrucciones: T('Elegí la traducción correcta de cada término.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: {
+      rondas: 5,
+      palabras: [
+        { en: 'agency',         es: 'agencia',              mal: ['agenda', 'urgencia'] },
+        { en: 'embeddedness',   es: 'incrustación',         mal: ['encuadre', 'endeudamiento'] },
+        { en: 'framing',        es: 'encuadre',             mal: ['armazón', 'enmarcado legal'] },
+        { en: 'gatekeeping',    es: 'filtrado de agenda',   mal: ['portería', 'guardia nocturna'] },
+        { en: 'accountability', es: 'rendición de cuentas', mal: ['contabilidad', 'responsabilidad penal'] },
+        { en: 'grassroots',     es: 'de base',              mal: ['raíces verdes', 'césped común'] },
+        { en: 'backlash',       es: 'reacción adversa',     mal: ['latigazo', 'retroceso técnico'] },
+        { en: 'livelihood',     es: 'medios de vida',       mal: ['vitalidad', 'esperanza de vida'] },
+      ],
+    },
     resultados: [
-      { codigo: 'exito',   min: 80, max: 100, texto: T('Ni una falta de ortografía. El titular te miró distinto.'), stats: { conocimiento: 16, fama: 6 } },
-      { codigo: 'parcial', min: 40, max: 79,  texto: T('Escribiste "Durkeim" y nadie te dijo nada.'),               stats: { conocimiento: 6 } },
-      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('"Bordié". Se rió toda la comisión.'),                        stats: { conocimiento: -6, fama: -5 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Lo leíste en el original y encima entendiste.'), stats: { conocimiento: 14, fama: 4 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Media traducción y mucho contexto inventado.'),  stats: { conocimiento: 6 } },
+      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Lo pasaste por el traductor y quedó peor.'),     stats: { conocimiento: -5, fama: -3 } },
     ],
   },
+
   {
-    codigo: 'mj_parcial', ilustracion: 'libro', nombre: 'Parcial contrarreloj', mecanica: 'barra_timing',
-    descripcion: 'Entregá justo antes de que se acabe el tiempo.',
-    instrucciones: T('Clic para frenar la barra en la franja verde. Tres intentos.'),
-    fases: ['ingresante', 'intermedio'], config: { intentos: 3, ancho_zona: 22, velocidad: 1.6 },
+    codigo: 'mj_sopa', ilustracion: 'libro', mecanica: 'sopa',
+    nombre: 'Sopa de letras de la cátedra',
+    descripcion: 'Los conceptos que entran en el parcial, escondidos.',
+    instrucciones: T('Clic en la primera y en la última letra de cada palabra.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: { lado: 8, segundos: 45, palabras: ['WEBER', 'ANOMIA', 'PRAXIS'] },
+    resultados: [
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Las tres al hilo. Ojo clínico.'),          stats: { conocimiento: 12, fama: 4 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Encontraste alguna y te cansaste.'),       stats: { conocimiento: 5 } },
+      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Miraste la hoja veinte minutos sin ver.'), stats: { conocimiento: -4 } },
+    ],
+  },
+
+  {
+    codigo: 'mj_crucigrama', ilustracion: 'libro', mecanica: 'crucigrama',
+    nombre: 'Parcial contrarreloj',
+    descripcion: 'Tres conceptos que se cruzan. Completá la grilla.',
+    instrucciones: T('Escribí una letra por casillero. Se cruzan entre sí.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: {
+      filas: 5, columnas: 8, segundos: 60,
+      palabras: [
+        { palabra: 'ANOMIA', f: 1, c: 0, horizontal: true,  pista: 'Lo que a Durkheim le quitaba el sueño' },
+        { palabra: 'MARX',   f: 1, c: 3, horizontal: false, pista: 'El de la barba y el capital' },
+        { palabra: 'PRAXIS', f: 3, c: 2, horizontal: true,  pista: 'La teoría cuando baja a la cancha' },
+      ],
+    },
     resultados: [
       { codigo: 'exito',   min: 70, max: 100, texto: T('Entregaste con tiempo de sobra.'),       stats: { conocimiento: 12, fama: 4 } },
       { codigo: 'parcial', min: 35, max: 69,  texto: T('Aprobaste raspando.'),                   stats: { conocimiento: 5 } },
       { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Se te acabó el tiempo con media hoja.'), stats: { conocimiento: -4, fama: -3 } },
     ],
   },
+
   {
-    codigo: 'mj_discurso', ilustracion: 'multitud', nombre: 'Timing del discurso', mecanica: 'barra_timing',
-    descripcion: 'Cortá la frase justo en el aplauso.',
-    instrucciones: T('Clic para cerrar la frase en el punto justo. Tres intentos.'),
-    fases: ['intermedio', 'avanzado'], config: { intentos: 3, ancho_zona: 18, velocidad: 2.0 },
+    codigo: 'mj_apellidos', ilustracion: 'libro', mecanica: 'apellidos',
+    nombre: 'Escribir bien los apellidos',
+    descripcion: 'Como suenan en el pasillo contra como se escriben.',
+    instrucciones: T('Te mostramos cómo lo dicen todos. Escribilo bien.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: {
+      rondas: 4,
+      autores: [
+        { mal: 'Bordié',    bien: 'Bourdieu' },
+        { mal: 'Durkeim',   bien: 'Durkheim' },
+        { mal: 'Fuco',      bien: 'Foucault' },
+        { mal: 'Vebber',    bien: 'Weber' },
+        { mal: 'Gramchi',   bien: 'Gramsci' },
+        { mal: 'Bodrillar', bien: 'Baudrillard' },
+      ],
+    },
     resultados: [
-      { codigo: 'exito',   min: 70, max: 100, texto: T('Aplauso cerrado.'),                     stats: { politica: 12, fama: 10 } },
-      { codigo: 'parcial', min: 35, max: 69,  texto: T('Aplauso tibio.'),                       stats: { politica: 4, fama: 3 } },
-      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Te seguiste de largo y se fueron.'),    stats: { politica: -6, fama: -6 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Ni una falta de ortografía. El titular te miró distinto.'), stats: { conocimiento: 16, fama: 6 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Escribiste "Durkeim" y nadie te dijo nada.'),               stats: { conocimiento: 6 } },
+      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('"Bordié". Se rió toda la comisión.'),                       stats: { conocimiento: -6, fama: -5 } },
     ],
   },
+
   {
-    codigo: 'mj_afiches', ilustracion: 'afiche', nombre: 'Noche de afiches', mecanica: 'click_rapido',
-    descripcion: 'Pegá todos los que puedas antes de que amanezca.',
-    instrucciones: T('Clic para pegar. Tenés 8 segundos antes de que llegue seguridad.'),
-    fases: ['ingresante', 'intermedio'], config: { segundos: 8, objetivo: 35 },
+    codigo: 'mj_conectar', ilustracion: 'afiche', mecanica: 'conectar',
+    nombre: 'El mapa conceptual',
+    descripcion: 'Unir los puntos antes de que te toque exponer.',
+    instrucciones: T('Clickeá los puntos en orden, del 1 al último.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: { puntos: 9 },
     resultados: [
-      { codigo: 'exito',   min: 70, max: 100, texto: T('Toda la facu con tu cara.'),               stats: { fama: 12, politica: 8 } },
-      { codigo: 'parcial', min: 35, max: 69,  texto: T('Pegaste medio pasillo.'),                  stats: { fama: 5, politica: 3 } },
-      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Te agarró seguridad con el balde.'),       stats: { fama: -4, politica: -3 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Quedó un mapa que hasta la cátedra te copió.'), stats: { conocimiento: 12, fama: 6 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Se entiende si lo explicás vos al lado.'),      stats: { conocimiento: 5 } },
+      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Parece una telaraña dibujada con el codo.'),    stats: { conocimiento: -4, fama: -3 } },
     ],
   },
+
   {
-    codigo: 'mj_ventanilla', ilustracion: 'sobre', nombre: 'Ventanilla de alumnos', mecanica: 'click_rapido',
-    descripcion: 'Sellá todo antes de que cierren.',
-    instrucciones: T('Clic en el sello lo más rápido posible durante 8 segundos.'),
-    fases: ['ingresante', 'intermedio', 'avanzado'], config: { segundos: 8, objetivo: 40 },
+    codigo: 'mj_molinete', ilustracion: 'bondi', mecanica: 'molinete',
+    nombre: 'Saltar el molinete',
+    descripcion: 'Sin SUBE y con clase en cuarenta minutos.',
+    instrucciones: T('Clic o barra espaciadora para saltar. No toques el molinete.'),
+    fases: ['ingresante', 'intermedio', 'avanzado'],
+    config: { obstaculos: 10, velocidad: 4.6 },
     resultados: [
-      { codigo: 'exito',   min: 70, max: 100, texto: T('Saliste con todo firmado.'),        stats: { guita: 10, politica: 5 } },
-      { codigo: 'parcial', min: 35, max: 69,  texto: T('Te falta un sello. Volvé mañana.'), stats: { politica: 2 } },
-      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Cerraron en tu cara.'),             stats: { guita: -8, fama: -3 } },
-    ],
-  },
-  {
-    codigo: 'mj_changa', ilustracion: 'plata', nombre: 'La changa del finde', mecanica: 'click_rapido',
-    descripcion: 'Cuantos más pedidos entregues, más guita.',
-    instrucciones: T('Clic por cada pedido entregado. Ocho segundos de turno.'),
-    fases: ['ingresante', 'intermedio', 'avanzado'], config: { segundos: 8, objetivo: 45 },
-    resultados: [
-      { codigo: 'exito',   min: 70, max: 100, texto: T('Turno redondo.'),            stats: { guita: 22, conocimiento: -3 } },
-      { codigo: 'parcial', min: 35, max: 69,  texto: T('Para el bondi y poco más.'), stats: { guita: 9, conocimiento: -2 } },
-      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('No te llamaron más.'),       stats: { guita: 2, fama: -2 } },
+      { codigo: 'exito',   min: 70, max: 100, texto: T('Pasaste los diez sin que te vieran. Llegaste con la SUBE intacta.'), stats: { guita: 16, fama: 6 } },
+      { codigo: 'parcial', min: 35, max: 69,  texto: T('Te llevaste uno por delante pero seguiste igual.'),                  stats: { guita: 7, fama: -2 } },
+      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Te agarró seguridad en el primer molinete.'),                        stats: { guita: -8, fama: -5 } },
     ],
   },
 ];
 
-// ---------------------------------------------------------------------
-// FINALES — los del documento. Se evalúan de mayor a menor prioridad.
-// Los finales combinados ("Guita y Fama", etc.) están sin redactar en
-// el documento: quedan pendientes.
-// ---------------------------------------------------------------------
 const finales = [
   {
     codigo: 'fin_secreto', ilustracion: 'alerta', prioridad: 2000,

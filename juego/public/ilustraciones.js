@@ -8,8 +8,10 @@
 //  se vea igual si lo abrís suelto, lo exportás o lo pegás en otro lado.
 // =====================================================================
 
-// Relleno de masa: mancha suave del mismo color, sin contorno.
-const M = 'fill="currentColor" stroke="none" opacity=".16"';
+// Relleno de masa: mancha plana, sin contorno. Por defecto blanca, para que
+// las figuras se recorten sobre la franja de color de la carta. Se puede
+// cambiar desde CSS con --ilu-masa.
+const M = 'fill="var(--ilu-masa, #FFFFFF)" stroke="none"';
 
 const marco = (arte) => `
 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -219,4 +221,70 @@ const ILUSTRACION_DEFECTO = 'facultad';
 
 function ilustracion(codigo) {
   return ILUSTRACIONES[codigo] || ILUSTRACIONES[ILUSTRACION_DEFECTO];
+}
+
+
+// =====================================================================
+//  Íconos de los stats. Dibujo propio, nada de emojis: a 22px el emoji
+//  se renderiza a color y rompe el registro del resto.
+//  Trazo de 2 sobre viewBox de 24, para que lean bien en chico.
+// =====================================================================
+
+const ico = (arte) => `
+<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g fill="none" stroke="currentColor" stroke-width="2"
+     stroke-linecap="round" stroke-linejoin="round">${arte}</g>
+</svg>`;
+
+const ICONOS = {
+  // Guita: moneda con el signo peso
+  moneda: ico(`
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 5.8v12.4"/>
+    <path d="M15 9.3c-.7-1-1.8-1.5-3-1.5-1.7 0-3 .9-3 2.2 0 3 6 1.5 6 4.5 0 1.3-1.3 2.2-3 2.2-1.2 0-2.3-.5-3-1.5"/>`),
+
+  // Conocimiento: libro abierto
+  libro: ico(`
+    <path d="M12 6.4C9.5 5 6.5 5 4 6.1v12.2c2.5-1.1 5.5-1.1 8 .3 2.5-1.4 5.5-1.4 8-.3V6.1C17.5 5 14.5 5 12 6.4z"/>
+    <path d="M12 6.4v12.2"/>`),
+
+  // Fama: estrella
+  estrella: ico(`
+    <path d="M12 3.2l2.7 5.7 6.1.9-4.4 4.4 1 6.2-5.4-3-5.4 3 1-6.2L3.2 9.8l6.1-.9z"/>`),
+
+  // Política: puño cerrado en alto. El pulgar va por dentro de la silueta:
+  // si sobresale por el costado el ícono lee como taza con asa.
+  puno: ico(`
+    <path d="M8.6 21.4L7.1 15.2V9.6a2.2 2.2 0 0 1 2.2-2.2h6.1a2.2 2.2 0 0 1 2.2 2.2v5.6l-1.5 6.2z"/>
+    <path d="M10.3 7.6v3.6M12.6 7.6v3.6M14.9 7.6v3.6"/>
+    <path d="M7.2 13.6c2.1-.3 3.6.5 4.4 2.3"/>
+    <path d="M8 18.2h8.2"/>`),
+
+  // Política (alternativa): bandera de agrupación
+  bandera: ico(`
+    <path d="M6 21.5V3"/>
+    <path d="M6 4.4h12l-2.9 4.3 2.9 4.3H6z"/>`),
+
+  // Violencia: oculto, solo por completitud
+  chispa: ico(`
+    <path d="M13 2.5L5 13.5h6l-2 8 9-11.5h-6z"/>`),
+};
+
+// Respaldo por código de stat. Si la base quedó vieja y `icono` trae otra
+// cosa (o nada), igual sale el dibujo que corresponde y no cuatro estrellas.
+const ICONO_POR_STAT = {
+  guita: 'moneda',
+  conocimiento: 'libro',
+  fama: 'estrella',
+  politica: 'puno',
+  violencia: 'chispa',
+};
+
+const ICONO_DEFECTO = 'estrella';
+
+function icono(codigo, statCodigo) {
+  return ICONOS[codigo]
+      || ICONOS[ICONO_POR_STAT[statCodigo]]
+      || ICONOS[ICONO_POR_STAT[codigo]]
+      || ICONOS[ICONO_DEFECTO];
 }

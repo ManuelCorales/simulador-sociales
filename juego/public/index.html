@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>La Carrera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Archivo+Black&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <link rel="icon" href="data:,">
 </head>
@@ -14,8 +17,8 @@
   <!-- ============ INICIO ============ -->
   <section id="pantalla-inicio" class="pantalla activa">
     <div class="inicio-box">
-      <h1>LA CARRERA</h1>
-      <p class="sub">Dieciséis decisiones entre el ingreso y el título.</p>
+      <h1>FSOQUER</h1>
+      <p class="sub">El cuadrilátero en el que se define TU FUTURO</p>
 
       <label class="campo">
         <span>¿Cómo te llamás?</span>
@@ -38,7 +41,6 @@
       </div>
 
       <button id="btn-empezar" class="primario">Empezar</button>
-      <p class="aviso-progreso">El progreso vive solo en esta pestaña: si la cerrás, empezás de nuevo.</p>
     </div>
   </section>
 
@@ -98,9 +100,16 @@
         <summary>Ver la carrera completa</summary>
         <ol id="final-resumen"></ol>
       </details>
+      <button id="btn-compartir" class="primario secundario">Compartir imagen</button>
       <button id="btn-reiniciar" class="primario">Otra vez</button>
     </div>
   </section>
+
+  <!-- Cortina de píxeles para el cambio de instancia -->
+  <div id="transicion" class="transicion">
+    <div class="tr-grid"></div>
+    <div class="tr-label"></div>
+  </div>
 
 </div>
 
