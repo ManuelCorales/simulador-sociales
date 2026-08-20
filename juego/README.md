@@ -169,6 +169,9 @@ public/          <-- ESTO es el sitio que se publica
   contenido.json generado por npm run build
 
 test/simular.js  simulador de partidas con chequeo de invariantes
+
+FINALES.md       los 24 finales y la condición exacta de cada uno
+BANCOS.md        las palabras de cada minijuego
 ```
 
 **`public/motor.js` es el mismo archivo en los dos mundos.** Expone
@@ -400,33 +403,36 @@ cortaron por abandono), 0 avisos apuntando a un evento que el jugador no respond
 Al terminar se evalúan los finales por prioridad descendente; gana el primero cuyas
 condiciones de stats se cumplen, y si no hay ninguno, el final por defecto.
 
-### Los finales de forma
+### Los finales por bandas
 
-Salvo tres excepciones, los finales no miran valores absolutos sino **el reparto**: cada
-stat vale su porcentaje del total de los cuatro, así que "guita 40%" significa lo mismo en
-una partida floja que en una exitosa. Un stat está **alto** si pasa el 31% y **bajo** si no
-llega al 19%.
+Al terminar, cada stat cae en una banda de puntaje fija, igual para todos y definida de
+antemano: **BAJA 0-30, MEDIA 31-41, ALTA 42-100**. El final sale de la combinación de
+bandas — no importa el valor exacto ni cómo se comparan los stats entre sí.
 
-Con cuatro stats eso da exactamente **15 formas** —4 dominantes, 6 duplas, 4 tríos y
-1 repartido— que cubren todos los casos sin superponerse. Lo garantiza la aritmética:
+| Combinación | Final | Cuántos |
+|---|---|---|
+| Las 4 en alta | Decano en diez años | 1 |
+| 3 en alta | trío, nombrado por el que falta | 4 |
+| 2 en alta | dupla | 6 |
+| 1 en alta y las otras 3 en baja | dominante puro, el monomaníaco | 4 |
+| 1 en alta, con alguna en media | dominante | 4 |
+| Las 4 en media | El promedio perfecto | 1 |
+| Las 4 en baja | El fantasma del pasillo | 1 |
+| Ninguna en alta, mezcla de baja y media | Graduado (default) | 1 |
 
-- No puede haber 4 altos: 31 × 4 = 124 > 100.
-- Con 3 altos al cuarto le queda 7% como mucho, o sea que cae bajo y la partida se lee
-  como trío ("todo menos X").
-- Con 0 altos no puede haber 2 bajos: 19 + 19 deja 62 para repartir entre dos stats que no
-  llegan a 31 (30,9 + 30,9 = 61,8 < 62). Así que hay 1 bajo (trío) o ninguno (repartido).
+Como se evalúan por prioridad descendente y los tramos van de más altas a menos, **cada
+final declara solo sus altas**: *Consultor garca* pide únicamente `guita ≥ 42`, porque si
+además hubieras llegado a 42 en otro stat, la dupla o el trío ya habrían ganado antes.
 
-Por eso alcanza con ordenar **duplas > dominantes > tríos > repartido**: cada partida cae
-en uno y solo uno, y las condiciones de cada final quedan en cuatro comparaciones.
+Los cortes salieron de medir 8000 partidas: con 42 y 30 los ocho tramos quedan en un rango
+jugable. **Si tocás la duración de la partida o la escala de los efectos hay que volver a
+medirlos.**
 
-El motor calcula `pct_guita`, `pct_conocimiento`, `pct_fama`, `pct_politica` y `promedio`
-justo antes de elegir, y los guarda como **stats ocultos**. Así las condiciones se escriben
-con la misma maquinaria que cualquier otra y no hizo falta tocar el esquema. Como son
-ocultos, quedan fuera del HUD, de los deltas y del resumen final.
+Dos finales ganan por prioridad alta sin mirar bandas: `fin_secreto` (`violencia ≥ 30`) y
+`fin_abandono`.
 
-Las tres excepciones ganan por prioridad alta sin importar la forma: `fin_secreto`
-(violencia ≥ 30), `fin_abandono` y `fin_fantasma`, que es un **piso de magnitud** —
-promedio ≤ 24— para la partida donde no pasó nada.
+El listado completo, con la condición de cada final y su frecuencia medida, está en
+[FINALES.md](FINALES.md).
 
 ## Contenido cargado
 
