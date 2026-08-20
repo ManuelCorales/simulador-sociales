@@ -288,3 +288,221 @@ function icono(codigo, statCodigo) {
       || ICONOS[ICONO_POR_STAT[codigo]]
       || ICONOS[ICONO_DEFECTO];
 }
+
+
+// =====================================================================
+//  PIXEL ART
+//  Cada sprite es una grilla de caracteres: una letra por píxel, según
+//  PALETA_PIXEL. El punto es transparente. Se dibujan como SVG (rects de
+//  1x1, uniendo tramos del mismo color en la fila) o directo en canvas.
+// =====================================================================
+
+const PALETA_PIXEL = {
+  k: '#12100E',   // negro / contorno
+  s: '#F0C49A',   // piel
+  S: '#C98F63',   // piel en sombra
+  w: '#FFFFFF',   // blanco
+  g: '#C9C9C4',   // gris claro
+  n: '#1F3557',   // azul oscuro (casaca, jean)
+  r: '#D9401C',   // rojo
+  b: '#6B4A2B',   // marrón (pelo, mochila)
+  y: '#E8C24A',   // rubio / remera
+  a: '#2FA8D5',   // celeste
+  m: '#9AA3A8',   // metal
+};
+
+// --- Retratos 16x16 para el memo test ---
+const RETRATOS = {
+  belgrano: {
+    nombre: 'Belgrano',
+    px: [
+      '................',
+      '....bbbbbbb.....',
+      '...bbbbbbbbb....',
+      '..bbssssssssb...',
+      '..bssssssssbb...',
+      '..bsskssksssb...',
+      '..bssssssssb....',
+      '..bssskkssssb...',
+      '...bsssssssb....',
+      '....ssssss......',
+      '...wwwwwwww.....',
+      '..wwwwwwwwww....',
+      '..nnnwwwwnnn....',
+      '.nnnnnwwnnnnn...',
+      '.nnnnnnnnnnnn...',
+      'nnnnnnnnnnnnnn..',
+    ],
+  },
+  sarmiento: {
+    nombre: 'Sarmiento',
+    px: [
+      '................',
+      '.....ssssss.....',
+      '....ssssssss....',
+      '...wssssssssw...',
+      '..wwssssssssww..',
+      '..wwssssssssww..',
+      '..wsskssksssw...',
+      '..wwssssssssw...',
+      '..wwsskkkksswww.',
+      '...wwsssssswww..',
+      '....wwwwwwww....',
+      '.....wwwwww.....',
+      '....kkkkkkkk....',
+      '...knnnnnnnnk...',
+      '..nnnnnnnnnnnn..',
+      '.nnnnnnnnnnnnnn.',
+    ],
+  },
+  che: {
+    nombre: 'Che',
+    px: [
+      '................',
+      '....kkkkkkkk....',
+      '...kkkkkkkkkk...',
+      '...kkrrkkkkkkk..',
+      '...kkkkkkkkkkk..',
+      '...kssssssssk...',
+      '..kkssssssssk...',
+      '..ksskssksskk...',
+      '..ksssssssskk...',
+      '..ksskkkksskk...',
+      '..kkssssssskk...',
+      '...kkssssskk....',
+      '....kkkkkkk.....',
+      '....knnnnnk.....',
+      '..nnnnnnnnnnn...',
+      '.nnnnnnnnnnnnn..',
+    ],
+  },
+  evita: {
+    nombre: 'Eva Perón',
+    px: [
+      '................',
+      '......yyyy......',
+      '.....yyyyyy.....',
+      '....yyyyyyyy....',
+      '...yyssssssyy...',
+      '..yysssssssyy...',
+      '..ysskssksssy...',
+      '..yssssssssy....',
+      '..yssssrsssy....',
+      '...yssssssy.....',
+      '....ssssss......',
+      '....kkkkkk......',
+      '...kkkkkkkk.....',
+      '..kkkkwwkkkk....',
+      '.kkkkkkkkkkkk...',
+      'kkkkkkkkkkkkkk..',
+    ],
+  },
+};
+
+// Convierte una grilla de caracteres en SVG, uniendo tramos horizontales
+// del mismo color para no escupir un rect por píxel.
+function pixelASvg(px, paleta = PALETA_PIXEL) {
+  const alto = px.length, ancho = px[0].length;
+  let d = '';
+  for (let f = 0; f < alto; f++) {
+    let c = 0;
+    while (c < ancho) {
+      const ch = px[f][c];
+      if (ch === '.') { c++; continue; }
+      let largo = 1;
+      while (c + largo < ancho && px[f][c + largo] === ch) largo++;
+      d += `<rect x="${c}" y="${f}" width="${largo}" height="1" fill="${paleta[ch] || '#000'}"/>`;
+      c += largo;
+    }
+  }
+  return `<svg viewBox="0 0 ${ancho} ${alto}" xmlns="http://www.w3.org/2000/svg"
+    shape-rendering="crispEdges" aria-hidden="true">${d}</svg>`;
+}
+
+function retrato(codigo) {
+  return RETRATOS[codigo] ? pixelASvg(RETRATOS[codigo].px) : '';
+}
+function nombreRetrato(codigo) {
+  return RETRATOS[codigo] ? RETRATOS[codigo].nombre : codigo;
+}
+
+// --- Sprites del corredor (se dibujan en canvas, no en SVG) ---
+const SPRITES = {
+  // 14 x 18. Dos fotogramas de carrera y uno de salto.
+  corre1: [
+    '....kkkkk.....',
+    '...kkkkkkk....',
+    '...ksssssk....',
+    '...kssksskk...',
+    '...ksssssk....',
+    '....kssk......',
+    '..bbyyyyyk....',
+    '.bbbyyyyyyk...',
+    '.bbbyyyyyyk...',
+    '.bbyyyyyyyk...',
+    '..kyyyyyyk....',
+    '...nnnnnn.....',
+    '...nnnnnn.....',
+    '...nn..nnn....',
+    '..nn....nn....',
+    '..nn.....nn...',
+    '.kkk....kkk...',
+    '..............',
+  ],
+  corre2: [
+    '....kkkkk.....',
+    '...kkkkkkk....',
+    '...ksssssk....',
+    '...kssksskk...',
+    '...ksssssk....',
+    '....kssk......',
+    '..bbyyyyyk....',
+    '.bbbyyyyyyk...',
+    '.bbbyyyyyyk...',
+    '.bbyyyyyyyk...',
+    '..kyyyyyyk....',
+    '...nnnnnn.....',
+    '...nnnnnn.....',
+    '...nn.nnn.....',
+    '..nn...nn.....',
+    '..nn...nn.....',
+    '.kkk...kkk....',
+    '..............',
+  ],
+  salta: [
+    '....kkkkk.....',
+    '...kkkkkkk....',
+    '...ksssssk....',
+    '...kssksskk...',
+    '...ksssssk....',
+    '....kssk......',
+    '..bbyyyyyk....',
+    '.bbbyyyyyyk...',
+    '.bbbyyyyyykk..',
+    '.bbyyyyyyyk...',
+    '..kyyyyyyk....',
+    '...nnnnnn.....',
+    '...nnnnnnn....',
+    '..nnnnnnnn....',
+    '..nnnn..nn....',
+    '.kkk....kkk...',
+    '..............',
+    '..............',
+  ],
+};
+
+// Dibuja un sprite de caracteres en un canvas, sin suavizado.
+function dibujarSprite(ctx, px, x, y, escala, paleta = PALETA_PIXEL) {
+  for (let f = 0; f < px.length; f++) {
+    let c = 0;
+    while (c < px[f].length) {
+      const ch = px[f][c];
+      if (ch === '.') { c++; continue; }
+      let largo = 1;
+      while (c + largo < px[f].length && px[f][c + largo] === ch) largo++;
+      ctx.fillStyle = paleta[ch] || '#000';
+      ctx.fillRect(x + c * escala, y + f * escala, largo * escala, escala);
+      c += largo;
+    }
+  }
+}

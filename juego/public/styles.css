@@ -494,18 +494,32 @@ input[type=text]:focus { outline: none; background: var(--amarillo); }
 .ttt-c.ocupada { cursor: default; }
 .ttt-c.gana { background: var(--amarillo); }
 
-/* --- 2. Memo test --- */
+/* --- 2. Memo test: retratos pixelados --- */
 .memo { display: grid; gap: 8px; justify-content: center; }
 .memo-c {
-  width: 66px; height: 66px;
+  width: 72px; height: 72px;
   background: var(--azul-suave);
   border: 4px solid var(--negro);
-  font-family: var(--titulo);
-  font-size: 26px; color: var(--negro);
   cursor: pointer;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  /* Dorso: una trama para que se note que está dada vuelta */
+  background-image: repeating-linear-gradient(
+    45deg, rgba(18,16,14,.14) 0 6px, transparent 6px 12px);
 }
-.memo-c.vista { background: var(--amarillo); }
-.memo-c.lista { background: var(--verde); cursor: default; }
+.memo-c svg {
+  width: 100%; height: 100%; display: block;
+  image-rendering: pixelated;
+}
+.memo-c.vista { background: var(--verde-claro); background-image: none; }
+.memo-c.lista { background: var(--verde); background-image: none; cursor: default; }
+.memo-nom {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--negro); color: var(--blanco);
+  font-family: var(--pixel); font-size: 5.5px;
+  padding: 3px 0; letter-spacing: .3px;
+}
 
 /* --- 4. Sopa de letras --- */
 .sopa { display: grid; gap: 3px; justify-content: center; }
@@ -675,6 +689,79 @@ input[type=text]:focus { outline: none; background: var(--amarillo); }
   100% { opacity: 0; transform: scale(1.1); }
 }
 
+/* =====================================================================
+   Panel de desarrollo. Solo aparece con ?dev en la URL.
+   ===================================================================== */
+#dev-panel {
+  position: fixed;
+  right: 12px; bottom: 12px;
+  z-index: 80;
+  width: 264px;
+  background: var(--negro);
+  border: 3px solid var(--amarillo);
+  color: var(--blanco);
+  font-family: var(--pixel);
+  font-size: 8px;
+  box-shadow: 6px 6px 0 rgba(0,0,0,.45);
+}
+.dev-barra {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--amarillo); color: var(--negro);
+  padding: 6px 8px;
+  font-size: 9px; letter-spacing: 1px;
+}
+.dev-barra button {
+  background: var(--negro); color: var(--amarillo);
+  border: none; width: 20px; height: 18px;
+  font-family: var(--pixel); font-size: 10px; cursor: pointer;
+}
+.dev-cuerpo { padding: 10px; display: flex; flex-direction: column; gap: 9px; }
+#dev-panel.plegado .dev-cuerpo { display: none; }
+
+#dev-panel label { display: block; line-height: 1.9; color: #B9B7AE; }
+#dev-panel select,
+#dev-panel input {
+  width: 100%;
+  background: #24221D;
+  color: var(--blanco);
+  border: 2px solid #4A473E;
+  padding: 5px;
+  font-family: var(--cuerpo);
+  font-size: 12px;
+  font-weight: 600;
+}
+#dev-panel select:focus, #dev-panel input:focus { outline: none; border-color: var(--amarillo); }
+
+.dev-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.dev-stats label { text-align: center; line-height: 1.4; }
+.dev-stats input { padding: 4px 2px; text-align: center; font-size: 11px; }
+
+.dev-fila { display: flex; gap: 6px; }
+.dev-fila button {
+  flex: 1;
+  background: var(--amarillo); color: var(--negro);
+  border: none; padding: 7px 4px;
+  font-family: var(--pixel); font-size: 7.5px;
+  cursor: pointer;
+}
+.dev-fila button:hover { background: #FFE05C; }
+#dev-nota { color: var(--verde); font-size: 7.5px; line-height: 1.6; word-break: break-word; }
+
+/* Franja para no confundir una sesión de testeo con una partida real */
+body.dev-activo::before {
+  content: "MODO DEV";
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 79;
+  background: var(--amarillo); color: var(--negro);
+  font-family: var(--pixel); font-size: 7px; letter-spacing: 2px;
+  text-align: center; padding: 3px 0;
+}
+body.dev-activo #app { padding-top: 30px; }
+
+@media (max-width: 640px) {
+  #dev-panel { width: calc(100% - 24px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tr-grid i.entra, .tr-grid i.sale { animation-duration: .01s; animation-delay: 0s; }
   .tr-label.visible { animation-duration: .3s; }
@@ -689,6 +776,14 @@ input[type=text]:focus { outline: none; background: var(--amarillo); }
   .campo + .campo { margin-top: 24px; padding-top: 22px; }
   .inicio-box .primario { margin-top: 28px; }
   .aviso-progreso { margin-top: 20px; }
+}
+
+/* Las grillas de sopa (10x10) y crucigrama (hasta 8 columnas) no entran en
+   pantallas angostas con el tamaño de celda de escritorio. */
+@media (max-width: 480px) {
+  .sopa-c { width: 28px; height: 28px; font-size: 9px; }
+  .cruci-c, .cruci-x { width: 29px; height: 29px; }
+  .cruci-c { font-size: 11px; }
 }
 
 @media (max-width: 420px) {

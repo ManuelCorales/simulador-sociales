@@ -306,6 +306,65 @@ if (abandono !== 1) errores.push(`Debe haber exactamente 1 efecto que deje la ca
 if (finalDefault !== 1) errores.push(`Debe haber exactamente 1 final por defecto (hay ${finalDefault})`);
 if (statsInexistentes) errores.push(`${statsInexistentes} efecto_stat apuntan a stats inexistentes`);
 
+// --- Contenido de los minijuegos ---
+// Se valida acá y no en el front: un banco mal armado tiene que frenar el
+// seed, no romper en medio de una partida.
+const sinTildes = (s) => String(s).trim().toLowerCase()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+C.minijuegos.forEach((m) => {
+  const cfg = m.config ?? {};
+
+  if (m.mecanica === 'crucigrama') {
+    const grillas = cfg.grillas ?? [cfg];
+    grillas.forEach((g, gi) => {
+      const donde = `${m.codigo} grilla ${gi + 1}`;
+      const letras = {};
+      (g.palabras ?? []).forEach((p) => {
+        const w = p.palabra.toUpperCase();
+        for (let k = 0; k < w.length; k++) {
+          const f = p.f + (p.horizontal ? 0 : k);
+          const c = p.c + (p.horizontal ? k : 0);
+          if (f < 0 || c < 0 || f >= g.filas || c >= g.columnas) {
+            errores.push(`${donde}: "${w}" se sale de la grilla (${g.filas}x${g.columnas})`);
+            return;
+          }
+          const clave = `${f},${c}`;
+          if (letras[clave] && letras[clave] !== w[k]) {
+            errores.push(`${donde}: cruce inconsistente en ${clave} — "${letras[clave]}" vs "${w[k]}"`);
+          }
+          letras[clave] = w[k];
+        }
+      });
+      if (!(g.palabras ?? []).every((p) => p.pista)) errores.push(`${donde}: alguna palabra sin pista`);
+    });
+  }
+
+  if (m.mecanica === 'sopa') {
+    const largas = (cfg.palabras ?? []).filter((w) => w.length > (cfg.lado ?? 8));
+    if (largas.length) errores.push(`${m.codigo}: no entran en la grilla: ${largas.join(', ')}`);
+    if ((cfg.palabras ?? []).length < (cfg.cantidad ?? 3)) errores.push(`${m.codigo}: el banco tiene menos palabras que las que pide`);
+  }
+
+  if (m.mecanica === 'traducir') {
+    if ((cfg.palabras ?? []).length < (cfg.rondas ?? 5)) errores.push(`${m.codigo}: el banco tiene menos términos que rondas`);
+    (cfg.palabras ?? []).forEach((p) => {
+      if (!p.en || !p.es || (p.mal ?? []).length < 2) errores.push(`${m.codigo}: "${p.en}" mal armado`);
+      if ((p.mal ?? []).includes(p.es)) errores.push(`${m.codigo}: "${p.en}" tiene la correcta entre los distractores`);
+    });
+  }
+
+  if (m.mecanica === 'apellidos') {
+    if ((cfg.autores ?? []).length < (cfg.rondas ?? 4)) errores.push(`${m.codigo}: el banco tiene menos autores que rondas`);
+    (cfg.autores ?? []).forEach((a) => {
+      // Si solo cambian las tildes, copiar el enunciado da por válido.
+      if (sinTildes(a.mal) === sinTildes(a.bien)) {
+        errores.push(`${m.codigo}: "${a.mal}" y "${a.bien}" son iguales sin tildes — se resuelve copiando`);
+      }
+    });
+  }
+});
+
 const n = (t) => db.prepare(`SELECT COUNT(*) c FROM ${t}`).get().c;
 const q1 = (sql) => db.prepare(sql).get().c;
 

@@ -7,20 +7,32 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 let META = null;
-let partidaId = null;
+let MOTOR = null;      // motor.js, ya con el contenido cargado
+let partida = null;    // el estado de la partida vive acá, en la pestaña
 let pantallaActual = null;
 let statsPrevios = {};
 
-const api = async (url, opts = {}) => {
-  const r = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error || 'Error de red');
-  return data;
-};
+// Levanta el contenido y arma el motor. Es lo único que se pide por red,
+// una sola vez: de ahí en más el juego corre entero en el navegador.
+async function cargarMotor() {
+  const r = await fetch('contenido.json');
+  if (!r.ok) throw new Error('No se pudo cargar contenido.json');
+  MOTOR = crearMotor(await r.json());
+
+  META = {
+    totalRondas: MOTOR.TOTAL_RONDAS,
+    stats: MOTOR.C.stats.filter((s) => s.visible).map((s) => ({
+      codigo: s.codigo, nombre: s.nombre, icono: s.icono, color: s.color,
+      descripcion: s.descripcion, inicial: s.valor_inicial,
+      min: s.valor_min, max: s.valor_max,
+    })),
+    generos: [
+      { codigo: 'm', nombre: 'Masculino' },
+      { codigo: 'f', nombre: 'Femenino' },
+      { codigo: 'nb', nombre: 'No binario' },
+    ],
+  };
+}
 
 const mostrarPantalla = (id) => {
   $$('.pantalla').forEach((p) => p.classList.toggle('activa', p.id === id));
@@ -34,7 +46,7 @@ let motivo = 'nose';
 let nombreJugador = '';
 
 async function initInicio() {
-  META = await api('/api/meta');
+  await cargarMotor();
 
   $('#in-genero').innerHTML = META.generos
     .map((g) => `<button type="button" data-valor="${g.codigo}">${g.nombre}</button>`).join('');
@@ -64,23 +76,12 @@ async function initInicio() {
   $('#btn-compartir').addEventListener('click', exportarImagen);
 }
 
-async function empezar() {
-  $('#btn-empezar').disabled = true;
+function empezar() {
   nombreJugador = $('#in-nombre').value.trim();
-  try {
-    const r = await api('/api/partida', {
-      method: 'POST',
-      body: { nombre: $('#in-nombre').value, genero, extra: { motivo } },
-    });
-    partidaId = r.partidaId;
-    statsPrevios = {};
-    mostrarPantalla('pantalla-juego');
-    render(r.pantalla);
-  } catch (e) {
-    alert(e.message);
-  } finally {
-    $('#btn-empezar').disabled = false;
-  }
+  partida = MOTOR.crearPartida({ nombre: nombreJugador, genero, extra: { motivo } });
+  statsPrevios = {};
+  mostrarPantalla('pantalla-juego');
+  render(MOTOR.siguiente(partida));
 }
 
 // =====================================================================
@@ -305,17 +306,14 @@ window.addEventListener('keydown', (e) => {
 // =====================================================================
 let ultimoResultado = null;
 
-async function responder(respuestaId) {
+function responder(respuestaId) {
   const carta = $('#carta');
   if (carta.dataset.bloqueado === '1') return;
   carta.dataset.bloqueado = '1';
   try {
-    const r = await api(`/api/partida/${partidaId}/responder`, {
-      method: 'POST', body: { respuestaId },
-    });
-    mostrarResultado(r);
+    mostrarResultado(MOTOR.responder(partida, respuestaId));
   } catch (e) {
-    alert(e.message);
+    console.error(e);
   } finally {
     carta.dataset.bloqueado = '0';
   }
@@ -340,14 +338,10 @@ function mostrarResultado(r) {
   $('#btn-continuar').focus();
 }
 
-async function continuar() {
+function continuar() {
   $('#resultado').classList.add('oculto');
-  if (ultimoResultado?.siguiente === 'final') {
-    const f = await api(`/api/partida/${partidaId}/final`);
-    return render(f);
-  }
-  const p = await api(`/api/partida/${partidaId}`);
-  render(p);
+  if (ultimoResultado?.siguiente === 'final') return render(MOTOR.pantallaFinal(partida));
+  render(MOTOR.siguiente(partida));
 }
 
 // =====================================================================
@@ -378,11 +372,12 @@ function renderMinijuego(p) {
   };
 }
 
-async function terminarMinijuego(puntaje) {
+function terminarMinijuego(puntaje) {
+  // Si una mecánica llama dos veces a `listo`, la segunda se ignora en vez
+  // de tirar una excepción que dejaría la pantalla trabada.
+  if (!partida || !partida.pendienteMinijuego) return;
   $('#mj-estado').textContent = `Puntaje: ${Math.round(puntaje)}`;
-  const r = await api(`/api/partida/${partidaId}/minijuego`, {
-    method: 'POST', body: { puntaje },
-  });
+  const r = MOTOR.resolverMinijuego(partida, puntaje);
   $('#minijuego').classList.add('oculto');
   $('#carta').classList.remove('oculto');
   mostrarResultado(r);
@@ -510,6 +505,7 @@ const MECANICAS = {
       const b = el('button', 'memo-c');
       b.type = 'button';
       b.dataset.simbolo = s;
+      b.title = nombreRetrato(s);
       b.onclick = () => dar(i);
       grilla.appendChild(b);
       return b;
@@ -519,11 +515,15 @@ const MECANICAS = {
     let abiertas = [], resueltas = 0, intentos = 0, bloqueado = false;
     const marcador = () => estado(`Pares: ${resueltas}/${pares} · Intentos: ${intentos}`);
 
+    // Las fichas son retratos pixelados, no letras.
+    const mostrar = (c, s) => { c.innerHTML = retrato(s) || s; };
+    const tapar = (c) => { c.innerHTML = ''; };
+
     function dar(i) {
       const c = cartas[i];
       if (bloqueado || c.classList.contains('vista') || c.classList.contains('lista')) return;
       c.classList.add('vista');
-      c.textContent = fichas[i];
+      mostrar(c, fichas[i]);
       abiertas.push(i);
       if (abiertas.length < 2) return;
 
@@ -531,8 +531,10 @@ const MECANICAS = {
       const [p, q] = abiertas;
       abiertas = [];
       if (fichas[p] === fichas[q]) {
-        cartas[p].classList.add('lista');
-        cartas[q].classList.add('lista');
+        [p, q].forEach((k) => {
+          cartas[k].classList.add('lista');
+          cartas[k].appendChild(el('b', 'memo-nom', nombreRetrato(fichas[k])));
+        });
         resueltas++;
         marcador();
         if (resueltas === pares) {
@@ -543,7 +545,7 @@ const MECANICAS = {
         bloqueado = true;
         marcador();
         setTimeout(() => {
-          [p, q].forEach((k) => { cartas[k].classList.remove('vista'); cartas[k].textContent = ''; });
+          [p, q].forEach((k) => { cartas[k].classList.remove('vista'); tapar(cartas[k]); });
           bloqueado = false;
         }, 620);
       }
@@ -587,31 +589,51 @@ const MECANICAS = {
   // --- 4. Sopa de letras: clic en la primera y en la última letra ---
   sopa(cfg, listo) {
     const N = cfg.lado ?? 8;
-    const objetivo = (cfg.palabras ?? ['WEBER', 'ANOMIA', 'PRAXIS']).map((w) => w.toUpperCase());
-    const grid = Array.from({ length: N }, () => Array(N).fill(''));
-    const ubicadas = [];
+    // Se sortean del banco, descartando las que no entren en la grilla.
+    const banco = (cfg.palabras ?? ['WEBER', 'ANOMIA', 'PRAXIS'])
+      .map((w) => w.toUpperCase())
+      .filter((w) => w.length <= N);
+    const cantidad = cfg.cantidad ?? 3;
 
-    // Coloca cada palabra en horizontal o vertical, sin pisarse.
-    for (const palabra of objetivo) {
-      for (let intento = 0; intento < 200; intento++) {
-        const horizontal = Math.random() < 0.5;
-        const largo = palabra.length;
-        const f = Math.floor(Math.random() * (horizontal ? N : N - largo + 1));
-        const c = Math.floor(Math.random() * (horizontal ? N - largo + 1 : N));
-        let entra = true;
-        for (let k = 0; k < largo; k++) {
-          const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
-          if (grid[ff][cc] && grid[ff][cc] !== palabra[k]) { entra = false; break; }
+    // Un intento completo de armar la grilla con las palabras dadas.
+    function armar(palabras) {
+      const grid = Array.from({ length: N }, () => Array(N).fill(''));
+      const puestas = [];
+      for (const palabra of palabras) {
+        for (let intento = 0; intento < 300; intento++) {
+          const horizontal = Math.random() < 0.5;
+          const largo = palabra.length;
+          const f = Math.floor(Math.random() * (horizontal ? N : N - largo + 1));
+          const c = Math.floor(Math.random() * (horizontal ? N - largo + 1 : N));
+          let entra = true;
+          for (let k = 0; k < largo; k++) {
+            const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
+            if (grid[ff][cc] && grid[ff][cc] !== palabra[k]) { entra = false; break; }
+          }
+          if (!entra) continue;
+          for (let k = 0; k < largo; k++) {
+            const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
+            grid[ff][cc] = palabra[k];
+          }
+          puestas.push({ palabra, f, c, horizontal });
+          break;
         }
-        if (!entra) continue;
-        for (let k = 0; k < largo; k++) {
-          const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
-          grid[ff][cc] = palabra[k];
-        }
-        ubicadas.push({ palabra, f, c, horizontal });
-        break;
       }
+      return { grid, puestas };
     }
+
+    // Si alguna no entra, se rearma con otro sorteo: listar una palabra que
+    // no está en la grilla es peor que repetir el banco.
+    let objetivo = [], grid, ubicadas;
+    for (let vuelta = 0; vuelta < 20; vuelta++) {
+      objetivo = mezclar(banco).slice(0, cantidad);
+      const r = armar(objetivo);
+      grid = r.grid; ubicadas = r.puestas;
+      if (ubicadas.length === objetivo.length) break;
+    }
+    // En el peor caso se juega con las que sí entraron.
+    objetivo = ubicadas.map((u) => u.palabra);
+
     const abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     for (let f = 0; f < N; f++) for (let c = 0; c < N; c++) {
       if (!grid[f][c]) grid[f][c] = abc[Math.floor(Math.random() * abc.length)];
@@ -674,8 +696,12 @@ const MECANICAS = {
 
   // --- 5. Crucigrama: grilla chica con palabras que se cruzan ---
   crucigrama(cfg, listo) {
-    const filas = cfg.filas ?? 5, cols = cfg.columnas ?? 8;
-    const palabras = cfg.palabras ?? [];
+    // Una grilla al azar del set. Si viene una sola suelta, se usa esa.
+    const g = (cfg.grillas && cfg.grillas.length)
+      ? cfg.grillas[Math.floor(Math.random() * cfg.grillas.length)]
+      : cfg;
+    const filas = g.filas ?? 5, cols = g.columnas ?? 8;
+    const palabras = g.palabras ?? [];
     const letras = {};     // "f,c" -> letra correcta
     palabras.forEach((p) => {
       const w = p.palabra.toUpperCase();
@@ -857,9 +883,12 @@ const MECANICAS = {
     const NEGRO = col('--negro', '#12100E');
     const AMARILLO = col('--amarillo', '#FFD520');
     const NARANJA = col('--naranja', '#F05A28');
-    const CELESTE = col('--celeste', '#6DCFF6');
+    const METAL = '#9AA3A8';
 
-    const SUELO = 176, ALTO_J = 46, ANCHO_J = 30, JX = 70;
+    const ESC = 3;                       // el sprite es de 14x18 píxeles
+    const ANCHO_J = 14 * ESC, ALTO_J = 18 * ESC;
+    const ANCHO_O = 40, ALTO_O = 52;     // molinete
+    const SUELO = 176, JX = 66;
     let y = SUELO - ALTO_J, vy = 0, saltando = false;
     let vel = cfg.velocidad ?? 4.6;
     let pasados = 0, chocado = false, corriendo = true, t = 0;
@@ -901,9 +930,10 @@ const MECANICAS = {
         return true;
       });
 
-      // Colisión
+      // Colisión: solo contra el poste y el brazo, con un poco de perdón
       for (const o of obstaculos) {
-        if (o.x < JX + ANCHO_J && o.x + 26 > JX && y + ALTO_J > SUELO - 42) {
+        if (o.x < JX + ANCHO_J - 6 && o.x + ANCHO_O - 10 > JX + 4
+            && y + ALTO_J > SUELO - ALTO_O + 6) {
           chocado = true;
           break;
         }
@@ -917,40 +947,71 @@ const MECANICAS = {
       requestAnimationFrame(paso);
     }
 
+    // Molinete de subte visto de costado: base, poste, cabezal, lector de
+    // SUBE y el trípode de brazos que es lo que lo hace reconocible.
+    function molinete(x) {
+      const base = SUELO, alto = ALTO_O;
+      const px = x + 13, pw = 14;              // poste
+      const cy = base - alto + 21;             // eje de los brazos
+
+      ctx.fillStyle = NEGRO;
+      ctx.fillRect(x + 2, base - 7, ANCHO_O - 4, 7);          // zócalo
+      ctx.fillStyle = METAL;
+      ctx.fillRect(x + 4, base - 6, ANCHO_O - 8, 5);
+
+      ctx.fillStyle = NEGRO;
+      ctx.fillRect(px - 2, base - alto, pw + 4, alto - 5);    // contorno del poste
+      ctx.fillStyle = METAL;
+      ctx.fillRect(px, base - alto + 2, pw, alto - 9);
+
+      ctx.fillStyle = AMARILLO;                    // lector de SUBE, arriba de todo
+      ctx.fillRect(px + 2, base - alto + 4, pw - 4, 10);
+      ctx.fillStyle = NEGRO;
+      ctx.fillRect(px + 2, base - alto + 4, pw - 4, 2);
+      ctx.fillRect(px + 4, base - alto + 9, pw - 8, 2);
+
+      // Trípode: un brazo hacia el jugador y dos en diagonal
+      const brazo = (dx, dy, largo, grosor) => {
+        const ang = Math.atan2(dy, dx);
+        ctx.save();
+        ctx.translate(px + pw / 2, cy);
+        ctx.rotate(ang);
+        ctx.fillStyle = NEGRO;
+        ctx.fillRect(0, -grosor / 2 - 2, largo, grosor + 4);
+        ctx.fillStyle = METAL;
+        ctx.fillRect(0, -grosor / 2, largo - 3, grosor);
+        ctx.restore();
+      };
+      brazo(-1, 0, 25, 7);        // hacia el estudiante: es el que hay que saltar
+      brazo(1, -0.9, 22, 7);      // arriba a la derecha
+      brazo(1, 0.9, 22, 7);       // abajo a la derecha
+
+      ctx.fillStyle = NEGRO;                                   // eje del trípode
+      ctx.fillRect(px + pw / 2 - 5, cy - 5, 10, 10);
+      ctx.fillStyle = METAL;
+      ctx.fillRect(px + pw / 2 - 3, cy - 3, 6, 6);
+    }
+
     function dibujar(golpe) {
       ctx.clearRect(0, 0, cv.width, cv.height);
-      // Andén
+
+      // Andén: piso y línea de baldosas que corre
       ctx.fillStyle = NEGRO;
       ctx.fillRect(0, SUELO, cv.width, 5);
-      ctx.fillStyle = 'rgba(18,16,14,.25)';
-      for (let x = -(t * vel) % 40; x < cv.width; x += 40) ctx.fillRect(x, SUELO + 12, 20, 4);
+      ctx.fillStyle = 'rgba(18,16,14,.22)';
+      for (let x = -((t * vel) % 44); x < cv.width; x += 44) ctx.fillRect(x, SUELO + 13, 24, 4);
 
-      // Molinetes
-      obstaculos.forEach((o) => {
-        ctx.fillStyle = CELESTE;
-        ctx.fillRect(o.x, SUELO - 42, 26, 42);
-        ctx.fillStyle = NEGRO;
-        ctx.fillRect(o.x, SUELO - 42, 26, 4);
-        ctx.fillRect(o.x, SUELO - 4, 26, 4);
-        ctx.fillRect(o.x, SUELO - 42, 4, 42);
-        ctx.fillRect(o.x + 22, SUELO - 42, 4, 42);
-        ctx.fillRect(o.x + 2, SUELO - 26, 22, 5);   // el brazo del molinete
-      });
+      obstaculos.forEach((o) => molinete(o.x));
 
-      // Estudiante
-      ctx.fillStyle = golpe ? NARANJA : AMARILLO;
-      ctx.fillRect(JX, y, ANCHO_J, ALTO_J);
-      ctx.fillStyle = NEGRO;
-      ctx.lineWidth = 0;
-      ctx.fillRect(JX, y, ANCHO_J, 4);
-      ctx.fillRect(JX, y + ALTO_J - 4, ANCHO_J, 4);
-      ctx.fillRect(JX, y, 4, ALTO_J);
-      ctx.fillRect(JX + ANCHO_J - 4, y, 4, ALTO_J);
-      ctx.fillRect(JX + 8, y + 12, 5, 5);          // ojo
-      ctx.fillRect(JX + 6, y + 26, 16, 4);         // mochila
-      // Piernas alternadas mientras corre
-      if (!saltando && Math.floor(t / 6) % 2 === 0) ctx.fillRect(JX + 4, y + ALTO_J, 6, 7);
-      else if (!saltando) ctx.fillRect(JX + ANCHO_J - 10, y + ALTO_J, 6, 7);
+      // Estudiante: sprite de píxeles, dos fotogramas de carrera
+      const spr = saltando ? SPRITES.salta
+        : (Math.floor(t / 7) % 2 === 0 ? SPRITES.corre1 : SPRITES.corre2);
+      if (golpe) {
+        // Al chocar se tiñe de naranja sin perder la silueta
+        dibujarSprite(ctx, spr, JX, y, ESC, { ...PALETA_PIXEL, y: NARANJA, n: NARANJA, s: NARANJA, b: NEGRO });
+      } else {
+        dibujarSprite(ctx, spr, JX, y, ESC);
+      }
     }
 
     estado(`Molinetes: 0/${TOTAL}`);
@@ -1197,4 +1258,6 @@ async function exportarImagen() {
 }
 
 // =====================================================================
-initInicio().catch((e) => alert('No se pudo cargar el juego: ' + e.message));
+// `dev.js` espera esta promesa antes de saltar a ningún lado.
+const listoInicio = initInicio()
+  .catch((e) => alert('No se pudo cargar el juego: ' + e.message));

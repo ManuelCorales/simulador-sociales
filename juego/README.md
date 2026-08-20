@@ -1,24 +1,58 @@
-# La Carrera — juego tipo REIGNS
+# FSOQUER — juego tipo REIGNS
 
-Prototipo jugable: SQLite + Express + front vanilla, todo local.
+Sitio estático: **el motor corre en el navegador** y no hay backend. SQLite se usa
+solo para editar el contenido; el juego consume un JSON generado desde ahí.
 
 ## Correrlo
 
 ```bash
-cd juego-reigns
-npm install
-npm run seed      # crea db/game.db y valida el contenido
+npm run build     # siembra la base y genera public/contenido.json
 npm start         # http://localhost:3000
 ```
 
-Requiere **Node 22.5 o superior**. `better-sqlite3` está en `optionalDependencies`:
-si no compila en tu máquina no pasa nada, el juego cae automáticamente al módulo
-`node:sqlite` que viene con Node. Si tenés Node más viejo, instalá better-sqlite3
-con herramientas de compilación.
+Requiere **Node 22.5 o superior**. No tiene dependencias de runtime: `npm install`
+ni hace falta para jugar. `better-sqlite3` figura como opcional y lo usan solo el
+seed y el build; si no compila, cae al módulo `node:sqlite` que viene con Node.
+
+`npm start` es un servidor de archivos estáticos de 60 líneas, solo para desarrollo:
+abrir `index.html` con doble clic no sirve porque `file://` bloquea el fetch del JSON.
 
 ```bash
 npm run test:run 500   # simula 500 partidas y chequea invariantes
 ```
+
+## Publicarlo
+
+`public/` es el sitio completo. Sirve cualquier hosting estático, gratis y sin
+cold start.
+
+**Vercel** — conectás el repo y listo. El `vercel.json` ya deja apuntado
+`outputDirectory: public`. Framework: "Other", sin build command.
+
+**Netlify** — publish directory `public`, sin build command.
+
+**GitHub Pages** — Settings → Pages → carpeta `/public` de la rama principal.
+
+`public/contenido.json` **se commitea a propósito**: es el contenido publicado.
+Cada vez que edites `db/contenido.js`, corré `npm run build` y commiteá el JSON
+junto con el cambio. La base (`db/game.db`) sí está en `.gitignore`, porque se
+regenera.
+
+### Por qué no un backend
+
+El juego guardaba las partidas en memoria del servidor. En hosting serverless
+(Vercel, Netlify Functions) cada request puede caer en otra instancia y las
+instancias se apagan: el jugador respondería la ronda 3 y le saltaría "partida no
+encontrada". En un host con proceso persistente funciona, pero en los planes
+gratis el servicio se duerme y el primer visitante espera cerca de un minuto.
+
+Como el motor es JavaScript puro y el contenido son 42 eventos que entran en un
+JSON de 50 KB comprimido, el servidor era peso muerto.
+
+**Lo que se perdió:** el archivado de partidas terminadas en SQLite (ya era
+opcional). Las tablas `partida`, `partida_stat` y `partida_log` siguen en el
+esquema sin uso. Y el contenido queda a la vista: cualquiera puede abrir
+`contenido.json` y leerse los finales sin jugar.
 
 ### Si falla con "unable to open database file"
 
@@ -62,23 +96,71 @@ DB_PATH=~/game.db npm run seed && DB_PATH=~/game.db npm start
 > no importa: el contenido se regenera con `npm run seed` y el progreso de la partida
 > nunca vive en la base.
 
+## Modo desarrollo
+
+Para no tener que jugar la partida entera cada vez que querés ver una carta o un
+minijuego. Se activa con parámetros en la URL:
+
+```
+http://localhost:3000/?dev                     abre el panel
+http://localhost:3000/?evento=gen_plaza_seca   salta a esa carta
+http://localhost:3000/?minijuego=molinete      salta a ese minijuego (código o mecánica)
+http://localhost:3000/?final=fin_secreto       salta a ese final
+http://localhost:3000/?ronda=14                arranca en esa ronda
+http://localhost:3000/?genero=f                m | f | nb
+http://localhost:3000/?stats=guita:88,fama:9   fija los stats
+```
+
+Se combinan: `?ronda=14&stats=guita:88&evento=fam_acosador&genero=f`.
+
+Con `?dev` aparece un **panel abajo a la derecha** con la lista completa de eventos
+(agrupados por categoría), minijuegos y finales, más los cuatro stats editables y un salto
+de ronda. Cada salto actualiza la URL, así que la barra de direcciones queda copiable para
+volver a esa pantalla exacta. Una franja arriba avisa que estás en modo dev, para no
+confundirlo con una partida real.
+
+Un evento forzado **se puede responder normalmente** y la partida sigue desde ahí, así se
+prueban también los efectos. Y se puede repetir el mismo evento cuantas veces quieras: el
+salto lo saca de "ya vistos".
+
+Sin parámetros en la URL, `public/dev.js` no hace absolutamente nada: es un `return`
+temprano. Como todo corre en el navegador, los saltos son llamadas directas al motor
+(`MOTOR.devEvento(partida, codigo)` y compañía).
+
+Ojo con esto al publicar: **el modo dev viaja al sitio en vivo**. Cualquiera que sepa
+poner `?dev` en la URL puede saltar a cualquier carta o final. Para este juego no es
+grave, pero si te molesta, no incluyas `dev.js` en el `<script>` de `index.html`
+antes de publicar.
+
 ## Estructura
 
 ```
 db/
-  schema.sql     esquema SQLite completo (24 tablas + 2 vistas de validación)
   contenido.js   TODO el contenido del juego en un solo archivo editable
+  schema.sql     esquema SQLite (24 tablas + 2 vistas de validación)
   seed.js        vuelca contenido.js a game.db y valida
+  cargar.js      lee game.db a un objeto plano
   conn.js        capa fina: better-sqlite3 o node:sqlite, lo que haya
-engine.js        motor: bolsa de eventos, condiciones, historias, avisos, finales
-server.js        API REST + archivado de partidas terminadas
-public/
-  index.html     estructura
-  styles.css     estilos
-  app.js         lógica del front y las tres mecánicas de minijuego
-  ilustraciones.js  biblioteca de dibujos vectoriales de las cartas
+build.js         vuelca la base a public/contenido.json
+server.js        servidor estático de desarrollo, sin dependencias
+engine.js        el motor para Node (3 líneas: motor + contenido de SQLite)
+
+public/          <-- ESTO es el sitio que se publica
+  index.html
+  styles.css
+  motor.js       motor del juego: bolsa de eventos, condiciones, avisos, finales
+  app.js         interfaz y las ocho mecánicas de minijuego
+  ilustraciones.js  dibujos de las cartas, íconos de stats y pixel art
+  dev.js         panel y deep links de testeo (inerte sin ?dev en la URL)
+  contenido.json generado por npm run build
+
 test/simular.js  simulador de partidas con chequeo de invariantes
 ```
+
+**`public/motor.js` es el mismo archivo en los dos mundos.** Expone
+`crearMotor(contenido)` y no tiene dependencias: el navegador lo carga con un
+`<script>` y le pasa el JSON; Node lo hace `require()` y le pasa lo que sale de
+SQLite. Así los tests corren contra exactamente el mismo código que juega la gente.
 
 ## Estética
 
@@ -170,7 +252,7 @@ entre los ocho — ninguno se repite dentro de la misma partida.
 | Mecánica | Minijuego | Cómo se juega | Puntaje |
 |---|---|---|---|
 | `tres_en_linea` | Tres en línea contra la otra lista | Sos las X contra una IA que juega bien el 65% de las veces | ganar 100 · empate 55 · perder 15 |
-| `memotest` | Memo test de autores | 4 pares, se dan vuelta de a dos | 100 menos 12 por cada intento de más |
+| `memotest` | Memo test de autores | 4 pares de retratos pixelados, se dan vuelta de a dos | 100 menos 12 por cada intento de más |
 | `traducir` | Traducir el paper | 5 términos en inglés, 3 opciones cada uno | aciertos / 5 |
 | `sopa` | Sopa de letras de la cátedra | Grilla 8x8, clic en la primera y la última letra | halladas / 3, **45s** |
 | `crucigrama` | Parcial contrarreloj | 3 palabras que se cruzan, una letra por casillero | letras correctas, **60s** |
@@ -182,6 +264,43 @@ entre los ocho — ninguno se repite dentro de la misma partida.
 límite de tiempo, alguien que no encuentra las palabras queda trabado en la pantalla para
 siempre. Al vencer se entrega lo que haya, que es justo lo que dice el mensaje de fallo
 del parcial.
+
+### Pixel art
+
+`ilustraciones.js` tiene además una sección de **pixel art**: cada sprite es una grilla de
+caracteres, una letra por píxel, según `PALETA_PIXEL`. El punto es transparente.
+
+- `RETRATOS` — Belgrano, Sarmiento, Che y Eva Perón en 16x16, para las fichas del memo
+  test. Se renderizan como SVG con `pixelASvg()`, que une los tramos horizontales del
+  mismo color en vez de escupir un rect por píxel.
+- `SPRITES` — el estudiante del molinete en 14x18, con dos fotogramas de carrera y uno de
+  salto. Se dibujan en canvas con `dibujarSprite()`.
+
+Editar un retrato es editar texto: se cambian las letras de la grilla y listo. Para sumar
+uno nuevo, agregalo a `RETRATOS` y ponelo en `simbolos` del memo test en `contenido.js`.
+
+El molinete se dibuja con primitivas: base, poste, lector de SUBE amarillo arriba y el
+trípode de tres brazos, que es lo que lo hace reconocible. El brazo que apunta al jugador
+es el que define la colisión.
+
+### Bancos de contenido
+
+Los cuatro juegos de palabras sortean de un banco grande para no repetir siempre lo mismo:
+
+| Juego | Banco | Saca | Combinaciones |
+|---|---|---|---|
+| Traducir el paper | 30 términos | 5 | ~142.000 |
+| Escribir bien los apellidos | 28 autores | 4 | ~20.000 |
+| Sopa de letras | 30 palabras | 3 | ~4.000 |
+| Crucigrama | 5 grillas armadas a mano | 1 | 5 |
+
+El **seed valida los bancos** antes de que lleguen al juego, y frena si algo está mal:
+
+- que las palabras del crucigrama entren en la grilla y **coincidan en los cruces**;
+- que las de la sopa no sean más largas que el lado de la grilla;
+- que ningún distractor de traducir sea la respuesta correcta;
+- que ningún apellido deformado sea igual al correcto **una vez que se le sacan las
+  tildes** — si no, se resuelve copiando el enunciado, porque la comparación las ignora.
 
 Todo el contenido de cada juego —las palabras a traducir, los autores, las pistas del
 crucigrama, la astucia del rival— vive en el `config` de `db/contenido.js`, así se edita
@@ -220,6 +339,34 @@ Los **avisos sí consumen ronda** y tienen exactamente una respuesta.
 Al terminar se evalúan los finales por prioridad descendente; gana el primero cuyas
 condiciones de stats se cumplen, y si no hay ninguno, el final por defecto.
 
+### Los finales de forma
+
+Salvo tres excepciones, los finales no miran valores absolutos sino **el reparto**: cada
+stat vale su porcentaje del total de los cuatro, así que "guita 40%" significa lo mismo en
+una partida floja que en una exitosa. Un stat está **alto** si pasa el 31% y **bajo** si no
+llega al 19%.
+
+Con cuatro stats eso da exactamente **15 formas** —4 dominantes, 6 duplas, 4 tríos y
+1 repartido— que cubren todos los casos sin superponerse. Lo garantiza la aritmética:
+
+- No puede haber 4 altos: 31 × 4 = 124 > 100.
+- Con 3 altos al cuarto le queda 7% como mucho, o sea que cae bajo y la partida se lee
+  como trío ("todo menos X").
+- Con 0 altos no puede haber 2 bajos: 19 + 19 deja 62 para repartir entre dos stats que no
+  llegan a 31 (30,9 + 30,9 = 61,8 < 62). Así que hay 1 bajo (trío) o ninguno (repartido).
+
+Por eso alcanza con ordenar **duplas > dominantes > tríos > repartido**: cada partida cae
+en uno y solo uno, y las condiciones de cada final quedan en cuatro comparaciones.
+
+El motor calcula `pct_guita`, `pct_conocimiento`, `pct_fama`, `pct_politica` y `promedio`
+justo antes de elegir, y los guarda como **stats ocultos**. Así las condiciones se escriben
+con la misma maquinaria que cualquier otra y no hizo falta tocar el esquema. Como son
+ocultos, quedan fuera del HUD, de los deltas y del resumen final.
+
+Las tres excepciones ganan por prioridad alta sin importar la forma: `fin_secreto`
+(violencia ≥ 30), `fin_abandono` y `fin_fantasma`, que es un **piso de magnitud** —
+promedio ≤ 24— para la partida donde no pasó nada.
+
 ## Contenido cargado
 
 Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a exitoso."**
@@ -234,22 +381,44 @@ Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a 
 | Efectos | 125, con pesos probabilísticos y algunos condicionales |
 | Salida de carrera | 1 sola: la tercera respuesta de "No alcanza para nada" (beca Sarmiento) |
 | Minijuegos | 8, uno por mecánica — se sortean 3 por partida |
-| Finales | 10: 4 de un stat dominante, 3 combinados, el secreto, el de abandono y el default |
+| Finales | 18: las 15 formas del reparto (4 dominantes, 6 duplas, 4 tríos, 1 repartido) más el secreto, el de abandono y el piso de magnitud |
 | Historias | 0 — el documento todavía no encadena eventos; la maquinaria queda lista |
 
-Distribución medida sobre 600 partidas con elecciones al azar:
+Distribución medida sobre 8000 partidas con elecciones al azar:
 
 ```
-fin_default      22.5%   fin_guita         9.0%
-fin_secreto      14.5%   fin_conocimiento  8.5%
-fin_fama         12.2%   fin_tecnocrata    4.7%
-fin_abandono     12.2%   fin_menem         4.5%
-fin_influencer    9.5%   fin_politica      2.5%
+fin_secreto      14.4%   fin_consultora     4.2%
+fin_abandono     12.9%   fin_influencer     3.7%
+fin_conocimiento 12.6%   fin_panelista      2.9%
+fin_guita        11.3%   fin_default        2.8%
+fin_fama          9.3%   fin_lobista        2.8%
+fin_politica      8.6%   fin_fantasma       1.9%
+fin_menem         5.5%   fin_sin_guita      0.9%
+fin_tecnocrata    4.3%   fin_sin_politica   0.7%
+                         fin_sin_fama       0.6%
+                         fin_sin_conocimiento 0.6%
 ```
 
-Ojo con dos números: jugando al azar el abandono sale 12% (es una de tres respuestas
-en su evento) y el secret ending 14,5%. Con decisiones deliberadas ambos bajan bastante,
-pero son los primeros umbrales a tocar si querés que sean más raros.
+Los cuatro tríos salen menos del 1% cada uno **a propósito**: piden que ningún stat se
+despegue y que uno solo se quede atrás, que es una partida rara. Son los finales de
+colección. Si querés que aparezcan más seguido, subí `BAJO` en `db/contenido.js` (de 19
+a 21-22); el que baja a cambio es `fin_default`.
+
+Ojo con dos números: jugando al azar el abandono sale 12,9% (es una de tres respuestas en
+su evento) y el secret ending 14,4%. Con decisiones deliberadas ambos bajan bastante, pero
+son los primeros umbrales a tocar si querés que sean más raros.
+
+### Balance de los cuatro stats
+
+Los finales de forma solo funcionan si los cuatro stats pesan parecido al terminar. Medido
+sobre 3000 partidas al azar, política llegaba a 34 contra 54 de fama: aparecía en menos
+respuestas (59 contra 74) y con neto más chico (+116 contra +200). Eso hacía que los cuatro
+finales con política sumaran apenas el 9,7%.
+
+El ajuste fue sobre los efectos, no sobre los umbrales: los positivos de política ×1,2, los
+negativos ×0,9 y los positivos de fama ×0,88. Los valores iniciales quedaron intactos.
+Resultado: guita 46,7 · conocimiento 45,6 · fama 47,7 · política 44,8, y los finales con
+política pasaron de 9,7% a 20,4%.
 
 ## Editar contenido
 

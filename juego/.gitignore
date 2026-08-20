@@ -1,4 +1,8 @@
 node_modules/
+
+# La base es un artefacto: se regenera con "npm run seed" desde db/contenido.js
 db/game.db
 db/game.db-wal
 db/game.db-shm
+
+# public/contenido.json SÍ se commitea a propósito: es lo que se publica.

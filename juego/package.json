@@ -1,16 +1,13 @@
 {
-  "name": "juego-reigns-carrera",
-  "version": "0.1.0",
-  "description": "Juego de rol tipo REIGNS ambientado en una carrera universitaria. SQLite + Express + front vanilla.",
+  "name": "fsoquer",
+  "version": "0.2.0",
+  "description": "Juego de rol tipo REIGNS ambientado en una carrera de Sociales. Sitio estático: el motor corre en el navegador.",
   "main": "server.js",
   "scripts": {
     "seed": "node --no-warnings db/seed.js",
+    "build": "node --no-warnings db/seed.js && node --no-warnings build.js",
     "start": "node --no-warnings server.js",
-    "dev": "node --no-warnings --watch server.js",
     "test:run": "node --no-warnings test/simular.js"
-  },
-  "dependencies": {
-    "express": "^4.19.2"
   },
   "optionalDependencies": {
     "better-sqlite3": "^11.0.0"
