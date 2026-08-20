@@ -45,8 +45,9 @@ const bool = (v) => (v ? 1 : 0);
 const insConf = db.prepare('INSERT INTO configuracion (clave, valor, descripcion) VALUES (?,?,?)');
 insConf.run('total_rondas', '9', 'Eventos de una partida completa. Con los 3 minijuegos dan 12 cartas.');
 insConf.run('minijuegos_por_partida', '3', 'Uno por fase, no consumen ronda');
-insConf.run('stats_iniciales_min', '15', 'Piso del sorteo de stats al empezar');
-insConf.run('stats_iniciales_max', '45', 'Techo del sorteo de stats al empezar');
+insConf.run('avisos_en_rondas', '4,7', 'Slots de aviso obligatorio. Cartas extra, no consumen ronda.');
+insConf.run('stats_iniciales_min', '24', 'Piso del sorteo de stats al empezar');
+insConf.run('stats_iniciales_max', '36', 'Techo del sorteo de stats al empezar');
 insConf.run('version_contenido', '0.1.0', 'Version del set de contenido cargado');
 
 // ---------------------------------------------------------------------
@@ -152,6 +153,25 @@ const insEfStat = db.prepare(`
 const insEfFlag = db.prepare('INSERT INTO efecto_flag (efecto_id, clave, valor) VALUES (?,?,?)');
 
 const disparadoresPendientes = [];
+
+// A qué aviso de familia manda un efecto, según su cambio más grande.
+// La violencia gana siempre: si escalaste, eso es lo que vuelve, no que de
+// paso hayas ganado un poco de fama.
+const FAMILIA_POR_CODIGO = Object.fromEntries(
+  C.avisosDeFamilia.map((a) => [a.familia, a.codigo]));
+
+function familiaDeEfecto(stats = {}) {
+  const num = (v) => (Array.isArray(v) ? (v[0] + v[1]) / 2 : v);
+  if (num(stats.violencia) > 0) return FAMILIA_POR_CODIGO['violencia+'];
+
+  let mejor = null, mayor = 0;
+  for (const cod of ['guita', 'conocimiento', 'fama', 'politica']) {
+    const v = num(stats[cod]);
+    if (v == null || v === 0) continue;
+    if (Math.abs(v) > mayor) { mayor = Math.abs(v); mejor = cod + (v > 0 ? '+' : '-'); }
+  }
+  return mejor ? FAMILIA_POR_CODIGO[mejor] : null;
+}
 const condicionesEfectoPendientes = [];
 
 C.eventos.forEach((e) => {
@@ -183,7 +203,17 @@ C.eventos.forEach((e) => {
 
       Object.entries(ef.flags ?? {}).forEach(([k, v]) => insEfFlag.run(efId, k, String(v)));
 
-      if (ef.aviso) disparadoresPendientes.push({ efId, ...ef.aviso });
+      // Cada efecto tiene que poder volver como aviso, porque la partida
+      // garantiza dos y los elige entre las decisiones que el jugador tomó de
+      // verdad. Si el efecto declara un aviso propio, gana ese (prioridad
+      // alta); si no, se le asigna el aviso de familia que corresponda a su
+      // cambio más grande. Los avisos no se disparan a sí mismos.
+      if (ef.aviso) {
+        disparadoresPendientes.push({ efId, prioridad: 500, ...ef.aviso });
+      } else if (e.tipo !== 'aviso') {
+        const fam = familiaDeEfecto(ef.stats);
+        if (fam) disparadoresPendientes.push({ efId, evento: fam, prioridad: 100 });
+      }
     });
   });
 });

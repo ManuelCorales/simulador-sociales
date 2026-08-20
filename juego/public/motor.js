@@ -48,6 +48,13 @@ function crearMotor(C) {
   // ---------------------------------------------------------------------
   const TOTAL_RONDAS = Number(C.config.total_rondas ?? 16);
 
+  // Rondas después de las cuales cae un aviso obligatorio. No consumen ronda:
+  // son cartas extra, como los minijuegos. Van en 4 y 7 para que ya haya
+  // decisiones tomadas de las que hablar y para no chocar con los minijuegos
+  // (2, 5 y 8).
+  const SLOTS_AVISO = String(C.config.avisos_en_rondas ?? '4,7')
+    .split(',').map((n) => Number(n.trim())).filter(Boolean);
+
   // ---------------------------------------------------------------------
   // Texto según género
   // ---------------------------------------------------------------------
@@ -106,7 +113,11 @@ function crearMotor(C) {
       efectosAplicados: new Set(),
       ultimaRondaDeEvento: {},
       historias: {},              // historiaId -> { idx, estado, ultimaRonda }
-      avisosPendientes: [],       // { eventoId, rondaObjetivo, forzado, prioridad }
+      avisosDisponibles: [],      // bolsa de avisos que dejaron las decisiones
+      avisosMostrados: [],        // { avisoCodigo, origenCodigo, origenTitulo }
+      slotsAvisoUsados: [],
+      pendienteAviso: null,       // ronda del slot
+      avisoActual: null,          // { origenTitulo } mientras se muestra
       minijuegos: sortearMinijuegos(),
       minijuegosJugados: {},
       pendienteMinijuego: null,   // faseId
@@ -261,17 +272,8 @@ function crearMotor(C) {
   // Selección del evento de la ronda
   // ---------------------------------------------------------------------
   function seleccionarEvento(estado) {
-    // 1) Aviso vencido: se muestra sí o sí.
-    const vencidos = estado.avisosPendientes
-      .filter((a) => a.rondaObjetivo <= estado.ronda)
-      .sort((a, b) => b.prioridad - a.prioridad);
-    if (vencidos.length) {
-      const a = vencidos[0];
-      estado.avisosPendientes = estado.avisosPendientes.filter((x) => x !== a);
-      return { evento: C.eventosPorId[a.eventoId], motivo: 'aviso' };
-    }
-
-    // 2) El único evento de abandono, si se dan las condiciones.
+    // Los avisos ya no compiten por la ronda: tienen sus propios slots.
+    // 1) El único evento de abandono, si se dan las condiciones.
     const abandono = C.eventos.find((e) => e.tipo === 'abandono');
     if (abandono && !estado.eventosVistos.has(abandono.id)
         && encajaEnRonda(abandono, estado)
@@ -279,7 +281,7 @@ function crearMotor(C) {
       return { evento: abandono, motivo: 'abandono' };
     }
 
-    // 3) Historia estricta en curso: se fuerza el siguiente eslabón.
+    // 2) Historia estricta en curso: se fuerza el siguiente eslabón.
     for (const h of C.historias) {
       if (h.modo_secuencia !== 'estricta') continue;
       const st = estado.historias[h.id];
@@ -293,7 +295,7 @@ function crearMotor(C) {
       if (estado.ronda - st.ultimaRonda >= 1) return { evento: ev, motivo: 'historia_estricta' };
     }
 
-    // 4) Bolsa ponderada.
+    // 3) Bolsa ponderada.
     let bolsa = candidatos(estado);
     let motivo = 'bolsa';
     if (!bolsa.length) { bolsa = candidatos(estado, { relajado: true }); motivo = 'bolsa_relajada'; }
@@ -329,13 +331,18 @@ function crearMotor(C) {
     return deltas;
   }
 
-  function programarAvisos(estado, efectoId) {
+  // Cada decisión deja un aviso disponible. No se programan para una ronda
+  // concreta: van a una bolsa y los dos slots fijos de la partida eligen de
+  // ahí, así siempre salen dos y siempre referencian algo que el jugador hizo.
+  function programarAvisos(estado, efectoId, ev) {
     (C.disparadoresPorEfecto[efectoId] ?? []).forEach((d) => {
-      estado.avisosPendientes.push({
+      estado.avisosDisponibles.push({
         eventoId: d.evento_destino_id,
-        rondaObjetivo: estado.ronda + entero(d.demora_min, d.demora_max),
-        forzado: !!d.forzado,
         prioridad: d.prioridad,
+        origenId: ev.id,
+        origenCodigo: ev.codigo,
+        origenTitulo: tx(ev, 'titulo', estado.genero) || ev.codigo,
+        ronda: estado.ronda,
       });
     });
   }
@@ -357,25 +364,10 @@ function crearMotor(C) {
   // ---------------------------------------------------------------------
   // Finales
   // ---------------------------------------------------------------------
-  // Los finales de "forma" no miran valores absolutos sino el reparto: cada
-  // stat vale su porcentaje del total de los cuatro. Así "guita 40%" significa
-  // lo mismo en una partida floja que en una exitosa. Se guardan como stats
-  // ocultos (pct_guita, pct_conocimiento, ...) para que las condiciones los
-  // lean con la misma maquinaria que cualquier otro stat, sin casos especiales.
-  const REPARTO = C.stats.filter((s) => s.visible).map((s) => s.codigo);
-
-  function calcularDerivados(estado) {
-    const total = REPARTO.reduce((acc, cod) => acc + (estado.stats[cod] ?? 0), 0);
-    for (const cod of REPARTO) {
-      // Sin puntos en ningún lado el reparto es parejo por definición.
-      const pct = total > 0 ? (estado.stats[cod] / total) * 100 : 100 / REPARTO.length;
-      estado.stats['pct_' + cod] = Math.round(pct * 10) / 10;
-    }
-    estado.stats.promedio = Math.round(total / REPARTO.length);
-  }
-
+  // Los finales miran bandas de puntaje fijas (BAJA / MEDIA / ALTA, definidas
+  // en db/contenido.js), así que alcanza con evaluar las condiciones contra los
+  // stats tal como quedaron. No hay nada que derivar.
   function elegirFinal(estado) {
-    calcularDerivados(estado);
     const candidatos = C.finales.filter((f) => {
       if (f.requiere_abandono && !estado.abandono) return false;
       if (!f.requiere_abandono && estado.abandono) return false;
@@ -440,6 +432,10 @@ function crearMotor(C) {
         texto: tx(ev, 'texto', estado.genero),
         esAviso: ev.tipo === 'aviso',
         terminaPartida: !!ev.termina_partida,
+        // De qué decisión tuya viene este aviso. La interfaz lo muestra arriba
+        // del título, que es lo que lo convierte en consecuencia y no en una
+        // carta suelta más.
+        origen: estado.avisoActual ? estado.avisoActual.origenTitulo : null,
       },
       respuestas,
     };
@@ -471,10 +467,52 @@ function crearMotor(C) {
     estado.finalId = elegirFinal(estado).id;
   }
 
+  // Elige el aviso para un slot. Prefiere los propios (prioridad 500) sobre los
+  // de familia (100) y, a igualdad, el más reciente: duele más lo de recién.
+  // Nunca repite ni el aviso ni el evento de origen dentro de la misma partida.
+  function elegirAviso(estado) {
+    const avisosUsados = new Set(estado.avisosMostrados.map((a) => a.avisoCodigo));
+    const origenesUsados = new Set(estado.avisosMostrados.map((a) => a.origenCodigo));
+
+    const cand = estado.avisosDisponibles.filter((a) => {
+      const ev = C.eventosPorId[a.eventoId];
+      return ev && !avisosUsados.has(ev.codigo) && !origenesUsados.has(a.origenCodigo);
+    });
+    if (!cand.length) return null;
+
+    // Un aviso sobre la carta que acabás de responder se lee como reacción, no
+    // como consecuencia. Se prefieren las decisiones de al menos dos rondas
+    // atrás, que es donde aparece la sensación de que el juego se acuerda.
+    const conDistancia = cand.filter((a) => estado.ronda - a.ronda >= 2);
+    const pool = conDistancia.length ? conDistancia : cand;
+
+    pool.sort((a, b) => (b.prioridad - a.prioridad) || (b.ronda - a.ronda));
+    return pool[0];
+  }
+
   function siguiente(estado) {
     if (estado.terminada) return pantallaFinal(estado);
 
     if (estado.pendienteMinijuego) return pantallaMinijuego(estado, estado.pendienteMinijuego);
+
+    // Slot de aviso: carta extra que referencia una decisión ya tomada.
+    if (estado.pendienteAviso != null && !estado.eventoActual) {
+      const a = elegirAviso(estado);
+      if (a) {
+        estado.avisosDisponibles = estado.avisosDisponibles.filter((x) => x !== a);
+        estado.eventoActual = C.eventosPorId[a.eventoId];
+        estado.motivoActual = 'aviso';
+        estado.avisoActual = a;
+        estado.avisosMostrados.push({
+          avisoCodigo: estado.eventoActual.codigo,
+          origenCodigo: a.origenCodigo,
+          origenTitulo: a.origenTitulo,
+        });
+      } else {
+        // No debería pasar: cada decisión deja al menos un aviso en la bolsa.
+        estado.pendienteAviso = null;
+      }
+    }
 
     if (!estado.eventoActual) {
       const sel = seleccionarEvento(estado);
@@ -506,7 +544,7 @@ function crearMotor(C) {
 
     const deltas = aplicarDeltas(estado, C.efectoStatsPorEfecto[efecto.id] ?? []);
     (C.efectoFlagsPorEfecto[efecto.id] ?? []).forEach((f) => { estado.flags[f.clave] = f.valor; });
-    programarAvisos(estado, efecto.id);
+    if (!estado.avisoActual) programarAvisos(estado, efecto.id, ev);
 
     estado.eventosVistos.add(ev.id);
     estado.respuestasElegidas.add(resp.id);
@@ -536,6 +574,14 @@ function crearMotor(C) {
 
     estado.eventoActual = null;
 
+    // Un aviso es una carta extra: no consume ronda ni dispara slots.
+    if (estado.avisoActual) {
+      estado.avisoActual = null;
+      estado.pendienteAviso = null;
+      resultado.siguiente = 'evento';
+      return resultado;
+    }
+
     // ¿Termina la partida? Puede cortar el evento entero o solo este efecto
     // (así "dejás la carrera" es una respuesta más dentro de un evento normal).
     if (ev.termina_partida || efecto.termina_partida) {
@@ -559,6 +605,11 @@ function crearMotor(C) {
         && estado.minijuegos[fase.id]) {
       estado.pendienteMinijuego = fase.id;
       resultado.siguiente = 'minijuego';
+    } else if (SLOTS_AVISO.includes(rondaTerminada)
+        && !estado.slotsAvisoUsados.includes(rondaTerminada)) {
+      estado.slotsAvisoUsados.push(rondaTerminada);
+      estado.pendienteAviso = rondaTerminada;
+      resultado.siguiente = 'aviso';
     } else {
       resultado.siguiente = 'evento';
     }

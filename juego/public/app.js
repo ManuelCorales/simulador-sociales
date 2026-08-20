@@ -221,6 +221,17 @@ function renderEvento(p) {
   $('#carta-ilu').dataset.cat = cat;
   $('#carta-ilu').innerHTML = ilustracion(p.evento.ilustracion);
   $('#carta-personaje').textContent = p.evento.personaje || (p.evento.esAviso ? 'Aviso' : '');
+
+  // En un aviso, lo primero que se lee es de qué decisión tuya viene. Sin esta
+  // línea la carta parece un evento suelto más y se pierde la continuidad.
+  const org = $('#carta-origen');
+  if (p.evento.origen) {
+    org.textContent = 'Por lo que hiciste en: ' + p.evento.origen;
+    org.hidden = false;
+  } else {
+    org.hidden = true;
+  }
+
   $('#carta-titulo').textContent = p.evento.titulo || '';
   $('#carta-texto').textContent = p.evento.texto;
 

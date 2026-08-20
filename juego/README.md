@@ -338,10 +338,16 @@ Está en `exportarImagen()` / `construirPlaca()` en `public/app.js`.
 
 ## Cómo funciona una partida
 
-**12 cartas: 9 eventos y 3 minijuegos.** Los stats arrancan al azar entre 15 y 45 (rango
-en `configuracion`, claves `stats_iniciales_min` / `stats_iniciales_max`), así que cada
-partida empieza con un perfil distinto. `violencia` arranca siempre en 0, porque el secret
-ending mide escalada, no punto de partida.
+**14 cartas: 9 eventos, 3 minijuegos y 2 avisos.** Los stats arrancan al azar entre 24 y
+36 (rango en `configuracion`, claves `stats_iniciales_min` / `stats_iniciales_max`), así
+que cada partida empieza con un perfil distinto. `violencia` arranca siempre en 0, porque
+el secret ending mide escalada, no punto de partida.
+
+El rango de arranque es angosto a propósito, y es un ajuste que costó descubrir:
+**comprimir los efectos sube el peso del arranque**, porque las decisiones mueven menos.
+Con efectos al 60% y arranque 15-45, el stat más alto al empezar seguía siendo el más alto
+al terminar en el 47% de las partidas. Achicando el arranque a 24-36 baja al 34%, que es
+menos que antes de comprimir. Si tocás una de las dos cosas, hay que revisar la otra.
 
 En cada ronda el motor arma la **bolsa** y elige con este orden de precedencia:
 
@@ -355,7 +361,30 @@ Los **minijuegos no consumen ronda**: se intercalan después de la ronda indicad
 Caen antes del cierre de cada fase para que la última carta de la partida sea siempre un
 evento: la decisión final la toma el jugador, no la resuelve su puntería.
 
-Los **avisos sí consumen ronda** y tienen exactamente una respuesta.
+### Los dos avisos obligatorios
+
+Toda partida muestra **exactamente dos avisos**, y los dos referencian una decisión que
+tomaste de verdad. Son cartas extra —no consumen ronda, como los minijuegos— y caen en los
+slots de `configuracion.avisos_en_rondas` (4 y 7), elegidos para no chocar con los
+minijuegos (2, 5 y 8) y para que ya haya decisiones de las que hablar.
+
+Cómo se garantizan los dos:
+
+1. **Cada decisión deja un aviso en la bolsa.** Los cuatro avisos *propios* están escritos
+   para una respuesta puntual. Para todo el resto, `db/seed.js` asigna solo un **aviso de
+   familia** según cuál fue el cambio de stat más grande del efecto: nueve familias que
+   cubren subir y bajar cada stat, más una para la violencia, que gana siempre.
+2. **Al llegar al slot se elige de esa bolsa.** Prefiere los propios sobre los de familia,
+   y entre iguales, decisiones de **al menos dos rondas atrás**: un aviso sobre la carta que
+   acabás de responder se lee como reacción, no como consecuencia.
+3. **Nunca repite** ni el mismo aviso ni el mismo evento de origen dentro de una partida.
+
+La carta lo encabeza con *"Por lo que hiciste en: La plaza seca"*. Sin esa línea el aviso
+parece un evento suelto más, y ahí se pierde toda la continuidad.
+
+Medido sobre 6000 partidas: 1,96 avisos por partida (las que bajan de 2 son las que se
+cortaron por abandono), 0 avisos apuntando a un evento que el jugador no respondió, y los
+13 avisos aparecen alguna vez. Los avisos tienen exactamente una respuesta.
 
 Al terminar se evalúan los finales por prioridad descendente; gana el primero cuyas
 condiciones de stats se cumplen, y si no hay ninguno, el final por defecto.
@@ -396,62 +425,51 @@ Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a 
 |---|---|
 | Stats | guita, conocimiento, fama, política — más `violencia`, **oculto**, que alimenta el secret ending |
 | Fases | ingresante (1-3), intermedio (4-6), avanzado (7-9) — 3 eventos cada una |
-| Eventos | 42 → 38 del documento + 4 avisos |
+| Eventos | 51 → 38 del documento, 4 avisos propios y 9 avisos de familia |
 | Categorías | generales 12, guita 9, fama 6, política 6, conocimiento 5 |
-| Respuestas | 102 (entre 1 y 4 por evento) |
-| Efectos | 125, con pesos probabilísticos y algunos condicionales |
+| Respuestas | 111 (entre 1 y 4 por evento; los avisos tienen 1) |
+| Efectos | 134, con pesos probabilísticos y algunos condicionales. 120 dejan un aviso disponible |
 | Salida de carrera | 1 sola: la tercera respuesta de "No alcanza para nada" (beca Sarmiento) |
 | Minijuegos | 8, uno por mecánica — se sortean 3 por partida |
-| Finales | 18: las 15 formas del reparto (4 dominantes, 6 duplas, 4 tríos, 1 repartido) más el secreto, el de abandono y el piso de magnitud |
+| Finales | 24, por combinación de bandas: 4 altas, 4 tríos, 6 duplas, 4 dominantes puros, 4 dominantes, las 4 medias, las 4 bajas, el default, el secreto y el de abandono |
 | Historias | 0 — el documento todavía no encadena eventos; la maquinaria queda lista |
 
-Distribución medida sobre 8000 partidas con elecciones al azar:
+Distribución medida sobre 10000 partidas con elecciones al azar. Ningún final pasa del
+7,7% y todos son alcanzables:
 
 ```
-fin_conocimiento 15.8%   fin_tecnocrata     4.2%
-fin_guita        14.9%   fin_panelista      3.5%
-fin_politica     10.9%   fin_influencer     3.5%
-fin_fama         10.3%   fin_lobista        3.3%
-fin_secreto       7.6%   fin_fantasma       3.1%
-fin_menem         6.4%   fin_sin_guita      1.1%
-fin_consultora    4.4%   fin_sin_conocimiento 0.9%
-fin_default       4.4%   fin_sin_fama       0.8%
-fin_abandono      4.2%   fin_sin_politica   0.5%
+fin_default        7.7%   fin_panelista        4.9%
+fin_menem          7.6%   fin_lobista          4.3%
+fin_guita          7.6%   fin_sin_conocimiento 3.2%
+fin_conocimiento   7.2%   fin_sin_fama         2.5%
+fin_secreto        7.1%   fin_sin_politica     2.4%
+fin_fama           6.5%   fin_decano           2.1%
+fin_tecnocrata     5.7%   fin_puro_guita       1.4%
+fin_politica       5.7%   fin_puro_conocimiento 1.0%
+fin_sin_guita      5.5%   fin_puro_fama        0.7%
+fin_consultora     5.4%   fin_promedio         0.6%
+fin_influencer     5.0%   fin_puro_politica    0.6%
+fin_abandono       4.9%   fin_fantasma         0.4%
 ```
-
-Los cuatro tríos salen alrededor del 1% cada uno **a propósito**: piden que ningún stat se
-despegue y que uno solo se quede atrás, que es una partida rara. Son los finales de
-colección. Si querés que aparezcan más seguido, subí `BAJO` en `db/contenido.js` (de 19
-a 21-22); el que baja a cambio es `fin_default`.
 
 ### Balance de los cuatro stats
 
-Los finales de forma solo funcionan si los cuatro stats pesan parecido al terminar, y el
-balance hubo que rehacerlo dos veces porque cambió el juego debajo.
+Los finales por bandas solo funcionan si los cuatro stats llegan parejos al corte, y el
+balance hubo que rehacerlo cada vez que cambió el juego debajo.
 
-**Primera vuelta (16 rondas, arranque fijo).** Política llegaba a 34 contra 54 de fama:
-aparecía en menos respuestas (59 contra 74) y con neto más chico (+116 contra +200). Los
-cuatro finales con política sumaban apenas el 9,7%. Se ajustó sobre los efectos, no sobre
-los umbrales: positivos de política x1,2, negativos x0,9 y positivos de fama x0,88.
+| Cuándo | Qué se desbalanceó | Ajuste |
+|---|---|---|
+| 16 rondas, arranque fijo | política 34 contra 54 de fama: aparecía en menos respuestas (59 contra 74) y con neto más chico | política +x1,2 / −x0,9 · fama +x0,88 |
+| 9 rondas, arranque al azar | guita perdió la ventaja de empezar en 40 y quedó en 34 contra 45 | guita +x1,35 / −x0,85 · conocimiento +x1,1 |
+| Compresión a 14 cartas | todos los efectos, para que los puntajes no salten tanto | todo x0,6, salvo `violencia` |
 
-**Segunda vuelta (9 rondas, arranque al azar).** Al sortear los cuatro stats en el mismo
-rango, guita perdió la ventaja que le daba empezar en 40 y quedó en 34 contra 45 de fama.
-Se corrigió con positivos de guita x1,35, negativos x0,85 y positivos de conocimiento x1,1.
+`violencia` queda fuera de la compresión a propósito: su umbral de 30 define el secret
+ending y escalarla lo movería sin querer.
 
-Resultado medido sobre 4000 partidas: guita 43,5 · conocimiento 44,3 · fama 44,9 ·
-política 43,7. Los cuatro entran en 1,5 puntos.
-
-**Si volvés a tocar la duración o el rango del sorteo, hay que rehacer esto.** Con menos
-cartas el arranque pesa más y cualquier asimetría en los valores iniciales se traslada
-directo al final. El procedimiento está en el historial: escalar los efectos de un stat
-por un factor, sembrar, simular unas miles de partidas y mirar la brecha entre el mayor y
-el menor promedio.
-
-**Efecto secundario del recorte a 9 rondas:** los avisos aparecen en 0,21 partidas de cada
-una, contra ~0,35 antes. Solo cuatro respuestas de 102 los programan, y ahora se sortean 9
-eventos en vez de 16, así que hay menos oportunidades de pisar una. Sus demoras se
-acortaron (de 2-6 rondas a 1-3) porque si no, el aviso quedaba programado para una ronda
-que ya no existe y no se disparaba nunca.
+**Si volvés a tocar la duración, el rango del sorteo o la escala de los efectos, hay que
+rehacer esto y volver a medir los cortes de banda.** El procedimiento: escalar los efectos
+de un stat por un factor, sembrar, simular unas miles de partidas y mirar la brecha entre
+el mayor y el menor promedio.
 
 ## Editar contenido
 

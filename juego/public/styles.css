@@ -314,6 +314,18 @@ input[type=text]:focus { outline: none; background: var(--amarillo); }
   margin: -1px 0 14px;
   text-align: center;
 }
+/* De qué decisión previa viene el aviso. Va arriba del título, en cursiva y
+   apagado, para que se lea como una nota al margen y no compita con la carta. */
+.carta-origen {
+  margin: -8px 22px 10px;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--gris-azul);
+}
+.carta-origen[hidden] { display: none; }
+
 .carta h2 {
   margin: 0 22px 12px;
   font-family: var(--titulo);

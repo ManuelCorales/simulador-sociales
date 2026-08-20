@@ -26,6 +26,8 @@ for (let i = 0; i < N; i++) {
 
   let pasos = 0;
   let rondasJugadas = 0;
+  let avisosDeEstaPartida = 0;
+  const titulosRespondidos = new Set();
   let minijuegosJugados = 0;
   let ultimaRonda = 0;
 
@@ -47,7 +49,6 @@ for (let i = 0; i < N; i++) {
     check(pantalla.respuestas.length >= 1 && pantalla.respuestas.length <= 4,
       `Evento ${pantalla.evento.codigo} con ${pantalla.respuestas.length} respuestas`);
     if (pantalla.evento.esAviso) {
-      avisosMostrados++;
       check(pantalla.respuestas.length === 1,
         `Aviso ${pantalla.evento.codigo} con ${pantalla.respuestas.length} respuestas`);
     }
@@ -61,7 +62,17 @@ for (let i = 0; i < N; i++) {
     check(pantalla.ronda <= motor.TOTAL_RONDAS, `Ronda ${pantalla.ronda} > total`);
 
     conteoEventos[pantalla.evento.codigo] = (conteoEventos[pantalla.evento.codigo] ?? 0) + 1;
-    rondasJugadas++;
+    // Los avisos son cartas extra: no consumen ronda, así que no cuentan acá.
+    if (pantalla.evento.esAviso) {
+      avisosDeEstaPartida++;
+      check(!!pantalla.evento.origen,
+        `Aviso ${pantalla.evento.codigo} sin la decisión de origen`);
+      check(titulosRespondidos.has(pantalla.evento.origen),
+        `Aviso ${pantalla.evento.codigo} apunta a "${pantalla.evento.origen}", que el jugador no respondió`);
+    } else {
+      titulosRespondidos.add(pantalla.evento.titulo);
+      rondasJugadas++;
+    }
 
     const elegida = pantalla.respuestas[Math.floor(Math.random() * pantalla.respuestas.length)];
     const res = motor.responder(estado, elegida.id);
@@ -74,8 +85,15 @@ for (let i = 0; i < N; i++) {
   conteoFinales[final.final.codigo] = (conteoFinales[final.final.codigo] ?? 0) + 1;
 
   if (estado.abandono) abandonos++;
-  else check(rondasJugadas === motor.TOTAL_RONDAS,
-    `Partida sin abandono jugó ${rondasJugadas} rondas (esperado ${motor.TOTAL_RONDAS})`);
+  else {
+    check(rondasJugadas === motor.TOTAL_RONDAS,
+      `Partida sin abandono jugó ${rondasJugadas} rondas (esperado ${motor.TOTAL_RONDAS})`);
+    // La partida garantiza dos avisos, y cada uno tiene que referenciar una
+    // decisión que el jugador tomó de verdad.
+    check(avisosDeEstaPartida === 2,
+      `Partida sin abandono mostró ${avisosDeEstaPartida} avisos (esperado 2)`);
+  }
+  avisosMostrados += avisosDeEstaPartida;
 
   check(minijuegosJugados <= 3, `Se jugaron ${minijuegosJugados} minijuegos`);
   if (!estado.abandono) {
