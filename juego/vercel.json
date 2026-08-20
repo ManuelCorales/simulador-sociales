@@ -1,7 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+
+  "// nota": "El juego es 100% estático: public/ ya tiene el motor y contenido.json. No hay nada que instalar ni compilar en Vercel. Si dejáramos que autodetecte, correría npm install (intenta compilar better-sqlite3 nativo) y npm run build (regenera la base con SQLite). Ambas cosas pueden fallar y ninguna hace falta: contenido.json se regenera en local con 'npm run build' y se commitea.",
+
+  "framework": null,
+  "installCommand": "echo 'sin dependencias que instalar'",
+  "buildCommand": "echo 'sin build: public/ ya esta listo'",
   "outputDirectory": "public",
   "cleanUrls": true,
+
   "headers": [
     {
       "source": "/contenido.json",

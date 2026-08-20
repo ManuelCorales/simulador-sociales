@@ -501,9 +501,6 @@ Del documento de diseño, lo que todavía no está:
 - **Minijuegos reales**: el documento lista tres en línea, memo test, traducir palabras,
   sopa de letras, crucigrama, apellidos de autores y conector de puntos. Están los 7
   cargados, pero corriendo sobre tres mecánicas genéricas.
-- **Finales combinados**: en el documento están los títulos pero no el texto
-  ("Guita y Conocimiento:", "Fama y Conocimiento:", etc.). Redacté tres de los que sí
-  tenían nombre — tecnócrata, Menem, influencer — y faltan los demás.
 - **"Perdés un cuatrimestre"**: aparece en dos efectos y hoy se traduce a una baja
   grande de conocimiento. Saltear una ronda de verdad requiere tocar el motor.
 - **Nivel por evento**: solo tres eventos vienen catalogados por instancia de la carrera
