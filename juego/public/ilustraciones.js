@@ -301,6 +301,7 @@ const PALETA_PIXEL = {
   k: '#12100E',   // negro / contorno
   s: '#F0C49A',   // piel
   S: '#C98F63',   // piel en sombra
+  p: '#CC8E69',   // piel de Azurduy
   w: '#FFFFFF',   // blanco
   g: '#C9C9C4',   // gris claro
   n: '#1F3557',   // azul oscuro (casaca, jean)
@@ -386,14 +387,14 @@ const RETRATOS = {
       '.....kkkkkk.....',
       '....kkkkkkkk....',
       '...kkkkkkkkkk...',
-      '...kkssssssk....',
-      '...ksssssssskk..',
-      '...ksskssksskk..',
-      '...kssssssssk...',
-      '...kssskkssskk..',
-      '...kkssssssk....',
-      '..kkkssssskkk...',
-      '..kkkkssssskkk..',
+      '...kkppppppk....',
+      '...kppppppppkk..',
+      '...kppkppkppkk..',
+      '...kppppppppk...',
+      '...kpppkkpppkk..',
+      '...kkppppppk....',
+      '..kkkpppppkkk...',
+      '..kkkkpppppkkk..',
       '..krrrrrrrrrrk..',
       '.krrrryyyyrrrrk.',
       '.krrrrrrrrrrrrk.',
@@ -410,13 +411,13 @@ const RETRATOS = {
       '....ssssssss....',
       '...ssssssssss...',
       '...ssssssssss...',
-      '..gssssssssssg..',
-      '..gkkkksskkkkg..',
-      '..gkwkwsswkwkg..',
-      '..gkkkksskkkkg..',
-      '..gssssssssssg..',
+      '..kkkkksskkkkk..',
+      '..kwwwksskwwwk..',
+      '..kwkwksskwkwk..',
+      '..kkkkksskkkkk..',
+      '...ssssssssss...',
       '....ssssssss....',
-      '....skkkkkks....',
+      '......kkkk......',
       '.....ssssss.....',
       '....aaaaaaaa....',
       '...aaaaaaaaaa...',
