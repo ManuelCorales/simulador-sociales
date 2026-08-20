@@ -32,14 +32,20 @@ const stats = [
 // ---------------------------------------------------------------------
 // FASES — 16 elecciones / puntos de control, una por cuatrimestre.
 // ---------------------------------------------------------------------
-// 9 eventos en 3 fases de 3, con un minijuego antes del cierre de cada una.
-// Total: 12 cartas. El minijuego cae en 2, 5 y 8 para que la última carta de la
-// partida sea siempre un evento: la decisión final la toma el jugador, no la
-// resuelve su puntería.
+// 6 eventos en 3 fases de 2, con un minijuego por fase y hasta 2 avisos.
+// Total: 11 cartas, que se alternan solas:
+//
+//     EV  MJ  EV  AV  EV  MJ  EV  AV  EV  MJ  EV
+//
+// Los minijuegos caen en 1, 3 y 5 y los avisos en 2 y 4: nunca hay dos cartas
+// sin decisión seguidas, y la última siempre es un evento, así que la decisión
+// final la toma el jugador y no la resuelve su puntería en un minijuego.
+// Los slots no pueden coincidir: si en la misma ronda cayeran un minijuego y un
+// aviso, el minijuego gana y el aviso se pierde sin mostrarse.
 const fases = [
-  { codigo: 'ingresante', nombre: 'Ingresante', ronda_desde: 1, ronda_hasta: 3, minijuego_despues_de: 2, orden: 1 },
-  { codigo: 'intermedio', nombre: 'Intermedio', ronda_desde: 4, ronda_hasta: 6, minijuego_despues_de: 5, orden: 2 },
-  { codigo: 'avanzado',   nombre: 'Avanzado',   ronda_desde: 7, ronda_hasta: 9, minijuego_despues_de: 8, orden: 3 },
+  { codigo: 'ingresante', nombre: 'Ingresante', ronda_desde: 1, ronda_hasta: 2, minijuego_despues_de: 1, orden: 1 },
+  { codigo: 'intermedio', nombre: 'Intermedio', ronda_desde: 3, ronda_hasta: 4, minijuego_despues_de: 3, orden: 2 },
+  { codigo: 'avanzado',   nombre: 'Avanzado',   ronda_desde: 5, ronda_hasta: 6, minijuego_despues_de: 5, orden: 3 },
 ];
 
 // ---------------------------------------------------------------------
@@ -377,10 +383,10 @@ const eventos = [
 
   // --- El único punto del juego donde se puede dejar la carrera ---
   {
-    codigo: 'gui_beca_sarmiento', ilustracion: 'plata', categoria: 'guita', peso: 120, ronda_min: 6, personaje: 'Beca Sarmiento',
+    codigo: 'gui_beca_sarmiento', ilustracion: 'plata', categoria: 'guita', peso: 120, ronda_min: 4, personaje: 'Beca Sarmiento',
     titulo: T('No alcanza para nada'),
     texto: T('No aumentan la beca Sarmiento hace meses y no te alcanza para nada.'),
-    notas_autor: 'Único evento con salida de la carrera (tercera respuesta).',
+    notas_autor: 'Único evento con salida de la carrera (tercera respuesta). ronda_min lo corre a la segunda mitad de la partida: con 6 rondas, de la 4 en adelante. Si cambia total_rondas hay que moverlo o queda con un solo tiro.',
     respuestas: [
       { texto: T('Timbear en el sinoca de Puerto Madero. El rojo es tu mejor amigo.'), efectos: [
         { peso: 45, texto: T('Salió el rojo tres veces seguidas. Te fuiste con los bolsillos llenos y una sensación peligrosa.'), stats: { guita: 20, conocimiento: -3 } },
@@ -1222,7 +1228,7 @@ const avisosDeFamilia = [
 // Cada stat cae en una de tres bandas de puntaje fijas, iguales para todos y
 // definidas de antemano:
 //
-//     BAJA   0 a 30        MEDIA  31 a 41        ALTA  42 a 100
+//     BAJA   0 a 28        MEDIA  29 a 39        ALTA  40 a 100
 //
 // El final lo define la combinacion de bandas con la que terminaste. Como los
 // finales se evaluan por prioridad descendente y los tramos van de mas altas a
@@ -1238,12 +1244,13 @@ const avisosDeFamilia = [
 //     0 altas, las 4 bajas         -> El fantasma del pasillo
 //     0 altas, mezcla              -> Graduado (default)
 //
-// Los cortes salieron de medir 8000 partidas: con 42 y 30 los ocho tramos
-// quedan todos en un rango jugable, entre 0,5% y 36%. Si tocas la duracion de
-// la partida o la escala de los efectos, hay que volver a medirlos.
+// Los cortes salieron de medir 8000 partidas. Con la partida de 9 eventos eran
+// 42 y 30; al bajar a 6 los stats se mueven menos y con esos cortes 'Graduado'
+// se disparaba al 14%, asi que pasaron a 40 y 28. Si tocas la duracion de la
+// partida o la escala de los efectos, hay que volver a medirlos.
 // ---------------------------------------------------------------------------
-const ALTA = 42;
-const BAJA = 30;
+const ALTA = 40;
+const BAJA = 28;
 const STATS4 = ['guita', 'conocimiento', 'fama', 'politica'];
 const alta = (s) => ({ tipo: 'stat', stat: s, operador: '>=', valor: ALTA });
 const baja = (s) => ({ tipo: 'stat', stat: s, operador: '<=', valor: BAJA });

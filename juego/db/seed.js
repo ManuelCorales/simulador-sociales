@@ -43,9 +43,9 @@ const bool = (v) => (v ? 1 : 0);
 // Configuración
 // ---------------------------------------------------------------------
 const insConf = db.prepare('INSERT INTO configuracion (clave, valor, descripcion) VALUES (?,?,?)');
-insConf.run('total_rondas', '9', 'Eventos de una partida completa. Con los 3 minijuegos dan 12 cartas.');
+insConf.run('total_rondas', '6', 'Eventos de una partida completa. Con 3 minijuegos y hasta 2 avisos dan 11 cartas.');
 insConf.run('minijuegos_por_partida', '3', 'Uno por fase, no consumen ronda');
-insConf.run('avisos_en_rondas', '4,7', 'Slots de aviso obligatorio. Cartas extra, no consumen ronda.');
+insConf.run('avisos_en_rondas', '2,4', 'Slots de aviso obligatorio. Cartas extra, no consumen ronda.');
 insConf.run('stats_iniciales_min', '24', 'Piso del sorteo de stats al empezar');
 insConf.run('stats_iniciales_max', '36', 'Techo del sorteo de stats al empezar');
 insConf.run('version_contenido', '0.1.0', 'Version del set de contenido cargado');

@@ -120,12 +120,12 @@ http://localhost:3000/?dev                     abre el panel
 http://localhost:3000/?evento=gen_plaza_seca   salta a esa carta
 http://localhost:3000/?minijuego=molinete      salta a ese minijuego (código o mecánica)
 http://localhost:3000/?final=fin_secreto       salta a ese final
-http://localhost:3000/?ronda=7                 arranca en esa ronda (1 a 9)
+http://localhost:3000/?ronda=5                 arranca en esa ronda (1 a 6)
 http://localhost:3000/?genero=f                m | f | nb
 http://localhost:3000/?stats=guita:88,fama:9   fija los stats
 ```
 
-Se combinan: `?ronda=7&stats=guita:88&evento=fam_acosador&genero=f`.
+Se combinan: `?ronda=5&stats=guita:88&evento=fam_acosador&genero=f`.
 
 Con `?dev` aparece un **panel abajo a la derecha** con la lista completa de eventos
 (agrupados por categoría), minijuegos y finales, más los cuatro stats editables y un salto
@@ -243,7 +243,7 @@ que mantienen el aire pero pierden el pixelado.
 
 Son 16 dibujos SVG de línea, monocromos, al estilo REIGNS. **Se repiten a propósito**:
 cada evento apunta a uno por su código y varios eventos comparten dibujo. En una partida
-de 9 rondas aparecen unos 7 distintos, que alcanza para que no se sienta repetitivo.
+de 6 rondas aparecen unos 5 distintos, que alcanza para que no se sienta repetitivo.
 
 ```
 profesor  estudiante  multitud  plaza     bondi   libro   plata   camara
@@ -352,7 +352,7 @@ Está en `exportarImagen()` / `construirPlaca()` en `public/app.js`.
 
 ## Cómo funciona una partida
 
-**14 cartas: 9 eventos, 3 minijuegos y 2 avisos.** Los stats arrancan al azar entre 24 y
+**11 cartas: 6 eventos, 3 minijuegos y hasta 2 avisos.** Los stats arrancan al azar entre 24 y
 36 (rango en `configuracion`, claves `stats_iniciales_min` / `stats_iniciales_max`), así
 que cada partida empieza con un perfil distinto. `violencia` arranca siempre en 0, porque
 el secret ending mide escalada, no punto de partida.
@@ -366,21 +366,31 @@ menos que antes de comprimir. Si tocás una de las dos cosas, hay que revisar la
 En cada ronda el motor arma la **bolsa** y elige con este orden de precedencia:
 
 1. **Aviso vencido** — si un efecto pasado programó un aviso y ya se cumplió la demora, se muestra sí o sí.
-2. **Evento de abandono** — el único evento que corta la carrera. Aparece solo si `guita ≤ 8` o `conocimiento ≤ 12`, de la ronda 6 en adelante.
+2. **Evento de abandono** — el único evento que corta la carrera. No pide nada de los stats: entra en la bolsa de la ronda 4 en adelante (`ronda_min`), o sea la segunda mitad de la partida. Abandonar es la tercera respuesta, no el evento en sí.
 3. **Historia estricta en curso** — el siguiente eslabón se fuerza, sin sorteo.
 4. **Sorteo ponderado** — todos los eventos que pasan sus condiciones compiten por su peso intrínseco. Las historias diferidas que ya superaron su `gap_max` entran con peso x4.
 
 Los **minijuegos no consumen ronda**: se intercalan después de la ronda indicada en
-`fase.minijuego_despues_de` (2, 5 y 8). Se sortean 3 de los 8 al empezar, uno por fase.
-Caen antes del cierre de cada fase para que la última carta de la partida sea siempre un
-evento: la decisión final la toma el jugador, no la resuelve su puntería.
+`fase.minijuego_despues_de` (1, 3 y 5). Se sortean 3 de los 8 al empezar, uno por fase.
+
+Con los avisos en 2 y 4, las once cartas se alternan solas:
+
+```
+EV  MJ  EV  AV  EV  MJ  EV  AV  EV  MJ  EV
+```
+
+Nunca hay dos cartas sin decisión seguidas, y la última siempre es un evento: la decisión
+final la toma el jugador, no la resuelve su puntería. **Los slots no pueden coincidir**:
+si en la misma ronda cayeran un minijuego y un aviso, el minijuego gana y el aviso se
+pierde sin mostrarse.
 
 ### Los dos avisos obligatorios
 
-Toda partida muestra **exactamente dos avisos**, y los dos referencian una decisión que
+Toda partida muestra **hasta dos avisos**, y los que salen referencian una decisión que
 tomaste de verdad. Son cartas extra —no consumen ronda, como los minijuegos— y caen en los
-slots de `configuracion.avisos_en_rondas` (4 y 7), elegidos para no chocar con los
-minijuegos (2, 5 y 8) y para que ya haya decisiones de las que hablar.
+slots de `configuracion.avisos_en_rondas` (2 y 4), elegidos para no chocar con los
+minijuegos (1, 3 y 5) y para que ya haya decisiones de las que hablar. Si en un slot no
+quedara ninguno sin usar se saltea en vez de forzarlo; medido, sale 1,98 por partida.
 
 Cómo se garantizan los dos:
 
@@ -396,9 +406,9 @@ Cómo se garantizan los dos:
 La carta lo encabeza con *"Por lo que hiciste en: La plaza seca"*. Sin esa línea el aviso
 parece un evento suelto más, y ahí se pierde toda la continuidad.
 
-Medido sobre 6000 partidas: 1,96 avisos por partida (las que bajan de 2 son las que se
-cortaron por abandono), 0 avisos apuntando a un evento que el jugador no respondió, y los
-13 avisos aparecen alguna vez. Los avisos tienen exactamente una respuesta.
+Medido: 1,98 avisos por partida (las que bajan de 2 son las que se cortaron por
+abandono), 0 avisos apuntando a un evento que el jugador no respondió, y los 13 avisos
+aparecen alguna vez. Los avisos tienen exactamente una respuesta.
 
 Al terminar se evalúan los finales por prioridad descendente; gana el primero cuyas
 condiciones de stats se cumplen, y si no hay ninguno, el final por defecto.
@@ -406,7 +416,7 @@ condiciones de stats se cumplen, y si no hay ninguno, el final por defecto.
 ### Los finales por bandas
 
 Al terminar, cada stat cae en una banda de puntaje fija, igual para todos y definida de
-antemano: **BAJA 0-30, MEDIA 31-41, ALTA 42-100**. El final sale de la combinación de
+antemano: **BAJA 0-28, MEDIA 29-39, ALTA 40-100**. El final sale de la combinación de
 bandas — no importa el valor exacto ni cómo se comparan los stats entre sí.
 
 | Combinación | Final | Cuántos |
@@ -421,12 +431,13 @@ bandas — no importa el valor exacto ni cómo se comparan los stats entre sí.
 | Ninguna en alta, mezcla de baja y media | Graduado (default) | 1 |
 
 Como se evalúan por prioridad descendente y los tramos van de más altas a menos, **cada
-final declara solo sus altas**: *Consultor garca* pide únicamente `guita ≥ 42`, porque si
-además hubieras llegado a 42 en otro stat, la dupla o el trío ya habrían ganado antes.
+final declara solo sus altas**: *Consultor garca* pide únicamente `guita ≥ 40`, porque si
+además hubieras llegado a 40 en otro stat, la dupla o el trío ya habrían ganado antes.
 
-Los cortes salieron de medir 8000 partidas: con 42 y 30 los ocho tramos quedan en un rango
-jugable. **Si tocás la duración de la partida o la escala de los efectos hay que volver a
-medirlos.**
+Los cortes salieron de medir 8000 partidas. Con la partida de 9 eventos eran 42 y 30; al
+bajar a 6 los stats se mueven menos y con esos cortes *Graduado* se disparaba al 14%, así
+que pasaron a **40 y 28**. **Si tocás la duración de la partida o la escala de los efectos
+hay que volver a medirlos.**
 
 Dos finales ganan por prioridad alta sin mirar bandas: `fin_secreto` (`violencia ≥ 30`) y
 `fin_abandono`.
@@ -441,7 +452,7 @@ Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a 
 | | |
 |---|---|
 | Stats | guita, conocimiento, fama, política — más `violencia`, **oculto**, que alimenta el secret ending |
-| Fases | ingresante (1-3), intermedio (4-6), avanzado (7-9) — 3 eventos cada una |
+| Fases | ingresante (1-2), intermedio (3-4), avanzado (5-6) — 2 eventos cada una |
 | Eventos | 51 → 38 del documento, 4 avisos propios y 9 avisos de familia |
 | Categorías | generales 12, guita 9, fama 6, política 6, conocimiento 5 |
 | Respuestas | 111 (entre 1 y 4 por evento; los avisos tienen 1) |
@@ -451,22 +462,25 @@ Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a 
 | Finales | 24, por combinación de bandas: 4 altas, 4 tríos, 6 duplas, 4 dominantes puros, 4 dominantes, las 4 medias, las 4 bajas, el default, el secreto y el de abandono |
 | Historias | 0 — el documento todavía no encadena eventos; la maquinaria queda lista |
 
-Distribución medida sobre 10000 partidas con elecciones al azar. Ningún final pasa del
-7,7% y todos son alcanzables:
+Distribución medida sobre 20000 partidas con elecciones al azar. Ningún final pasa del
+9,8% y todos son alcanzables. El detalle con la condición de cada uno está en
+[FINALES.md](FINALES.md).
 
 ```
-fin_default        7.7%   fin_panelista        4.9%
-fin_menem          7.6%   fin_lobista          4.3%
-fin_guita          7.6%   fin_sin_conocimiento 3.2%
-fin_conocimiento   7.2%   fin_sin_fama         2.5%
-fin_secreto        7.1%   fin_sin_politica     2.4%
-fin_fama           6.5%   fin_decano           2.1%
-fin_tecnocrata     5.7%   fin_puro_guita       1.4%
-fin_politica       5.7%   fin_puro_conocimiento 1.0%
-fin_sin_guita      5.5%   fin_puro_fama        0.7%
-fin_consultora     5.4%   fin_promedio         0.6%
-fin_influencer     5.0%   fin_puro_politica    0.6%
-fin_abandono       4.9%   fin_fantasma         0.4%
+fin_conocimiento   9.8%   fin_influencer       4,1%
+fin_default        8,5%   fin_secreto          3,4%
+fin_menem          7,7%   fin_abandono         3,4%
+fin_sin_guita      7,6%   fin_lobista          3,3%
+fin_guita          6,6%   fin_sin_conocimiento 2,9%
+fin_politica       6,6%   fin_sin_politica     2,8%
+fin_panelista      6,3%   fin_sin_fama         2,4%
+fin_tecnocrata     6,2%   fin_decano           2,3%
+fin_fama           6,0%   fin_puro_guita       1,2%
+fin_consultora     5,5%   fin_puro_conocimiento 1,1%
+                          fin_promedio         0,8%
+                          fin_puro_politica    0,7%
+                          fin_puro_fama        0,5%
+                          fin_fantasma         0,4%
 ```
 
 ### Balance de los cuatro stats
@@ -478,7 +492,7 @@ balance hubo que rehacerlo cada vez que cambió el juego debajo.
 |---|---|---|
 | 16 rondas, arranque fijo | política 34 contra 54 de fama: aparecía en menos respuestas (59 contra 74) y con neto más chico | política +x1,2 / −x0,9 · fama +x0,88 |
 | 9 rondas, arranque al azar | guita perdió la ventaja de empezar en 40 y quedó en 34 contra 45 | guita +x1,35 / −x0,85 · conocimiento +x1,1 |
-| Compresión a 14 cartas | todos los efectos, para que los puntajes no salten tanto | todo x0,6, salvo `violencia` |
+| Compresión de la partida | todos los efectos, para que los puntajes no salten tanto | todo x0,6, salvo `violencia` |
 
 `violencia` queda fuera de la compresión a propósito: su umbral de 30 define el secret
 ending y escalarla lo movería sin querer.

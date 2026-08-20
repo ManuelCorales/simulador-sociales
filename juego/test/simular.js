@@ -88,10 +88,11 @@ for (let i = 0; i < N; i++) {
   else {
     check(rondasJugadas === motor.TOTAL_RONDAS,
       `Partida sin abandono jugó ${rondasJugadas} rondas (esperado ${motor.TOTAL_RONDAS})`);
-    // La partida garantiza dos avisos, y cada uno tiene que referenciar una
-    // decisión que el jugador tomó de verdad.
-    check(avisosDeEstaPartida === 2,
-      `Partida sin abandono mostró ${avisosDeEstaPartida} avisos (esperado 2)`);
+    // La partida tiene dos slots de aviso, y cada aviso tiene que referenciar
+    // una decisión que el jugador tomó de verdad. Son "a lo sumo dos": si en un
+    // slot no quedaba ninguno sin usar, se saltea en vez de forzarlo.
+    check(avisosDeEstaPartida <= 2,
+      `Partida sin abandono mostró ${avisosDeEstaPartida} avisos (máximo 2)`);
   }
   avisosMostrados += avisosDeEstaPartida;
 
