@@ -171,6 +171,7 @@ public/          <-- ESTO es el sitio que se publica
 test/simular.js  simulador de partidas con chequeo de invariantes
 
 FINALES.md       los 24 finales y la condición exacta de cada uno
+EVENTOS.md       porcentaje de aparición de cada evento y de cada aviso
 BANCOS.md        las palabras de cada minijuego
 ```
 
