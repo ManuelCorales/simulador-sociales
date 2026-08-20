@@ -1,0 +1,24 @@
+# Lo único que se publica es public/. Todo lo demás es para desarrollo local.
+#
+# Esto no es una optimización: es lo que evita que el deploy se rompa. Si sube
+# package.json, Vercel ve "main": "server.js" y "start": "node server.js",
+# deduce que es un servidor Node y empaqueta server.js como serverless
+# function. Ahí crashea con FUNCTION_INVOCATION_FAILED, porque server.js llama
+# a listen() en un puerto y una function no expone puertos: tiene que exportar
+# un handler.
+#
+# Sin package.json ni server.js no hay nada que autodetectar, y Vercel sirve
+# public/ como archivos estáticos, que es lo que queremos.
+
+package.json
+package-lock.json
+node_modules
+
+server.js
+engine.js
+build.js
+db
+test
+
+README.md
+BANCOS.md

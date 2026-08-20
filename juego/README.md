@@ -26,8 +26,22 @@ npm run test:run 500   # simula 500 partidas y chequea invariantes
 `public/` es el sitio completo. Sirve cualquier hosting estático, gratis y sin
 cold start.
 
-**Vercel** — conectás el repo y listo. El `vercel.json` ya deja apuntado
-`outputDirectory: public`. Framework: "Other", sin build command.
+**Vercel** — conectás el repo. Dos cosas que hay que acertar:
+
+- **Root Directory: `juego`**. El repo tiene el juego en un subdirectorio; con la raíz
+  del repo, Vercel no encuentra ni `vercel.json` ni `public/`.
+- Framework "Other". El `vercel.json` ya deja apuntado `outputDirectory: public` y anula
+  install y build.
+
+Si el deploy termina en **500 `FUNCTION_INVOCATION_FAILED`**, es que Vercel armó una
+serverless function en vez de servir archivos. Pasa porque `package.json` declara
+`"main": "server.js"` y `"start": "node server.js"`: con eso deduce que es un servidor
+Node y empaqueta `server.js`, que crashea al llamar a `listen()` — una function no expone
+puertos, tiene que exportar un handler. Lo resuelve el `.vercelignore`, que deja afuera
+`package.json`, `server.js` y todo lo de desarrollo. Sin nada que autodetectar, Vercel
+sirve `public/` y ya.
+
+Al deploy suben nueve archivos: los siete de `public/`, `vercel.json` y `.gitignore`.
 
 **Netlify** — publish directory `public`, sin build command.
 
