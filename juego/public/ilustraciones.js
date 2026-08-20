@@ -376,6 +376,53 @@ const RETRATOS = {
       '.nnnnnnnnnnnnn..',
     ],
   },
+  // Pelo negro largo que cae sobre los hombros y casaca roja: es la silueta
+  // que la separa del resto de un vistazo, que es lo único que importa en una
+  // ficha de 16x16 que ves medio segundo.
+  azurduy: {
+    nombre: 'Juana Azurduy',
+    px: [
+      '................',
+      '.....kkkkkk.....',
+      '....kkkkkkkk....',
+      '...kkkkkkkkkk...',
+      '...kkssssssk....',
+      '...ksssssssskk..',
+      '...ksskssksskk..',
+      '...kssssssssk...',
+      '...kssskkssskk..',
+      '...kkssssssk....',
+      '..kkkssssskkk...',
+      '..kkkkssssskkk..',
+      '..krrrrrrrrrrk..',
+      '.krrrryyyyrrrrk.',
+      '.krrrrrrrrrrrrk.',
+      'kkrrrrrrrrrrrrkk',
+    ],
+  },
+  // Pelado, con anteojos y el pelo solo a los costados. Ninguno de los otros
+  // cinco tiene la coronilla al aire, así que se reconoce por la silueta.
+  rubinich: {
+    nombre: 'Rubinich',
+    px: [
+      '................',
+      '.....ssssss.....',
+      '....ssssssss....',
+      '...ssssssssss...',
+      '...ssssssssss...',
+      '..gssssssssssg..',
+      '..gkkkksskkkkg..',
+      '..gkwkwsswkwkg..',
+      '..gkkkksskkkkg..',
+      '..gssssssssssg..',
+      '....ssssssss....',
+      '....skkkkkks....',
+      '.....ssssss.....',
+      '....aaaaaaaa....',
+      '...aaaaaaaaaa...',
+      '..aaaaaaaaaaaa..',
+    ],
+  },
   evita: {
     nombre: 'Eva Perón',
     px: [

@@ -790,12 +790,15 @@ body.dev-activo #app { padding-top: 30px; }
   .aviso-progreso { margin-top: 20px; }
 }
 
-/* Las grillas de sopa (10x10) y crucigrama (hasta 8 columnas) no entran en
-   pantallas angostas con el tamaño de celda de escritorio. */
+/* Las grillas de sopa (10x10), crucigrama (hasta 8 columnas) y memo test
+   (4 columnas de 80px con borde = 344px) no entran en pantallas angostas con
+   el tamaño de celda de escritorio. */
 @media (max-width: 480px) {
   .sopa-c { width: 28px; height: 28px; font-size: 9px; }
   .cruci-c, .cruci-x { width: 29px; height: 29px; }
   .cruci-c { font-size: 11px; }
+  .memo { gap: 6px; }
+  .memo-c { width: 60px; height: 60px; }
 }
 
 @media (max-width: 420px) {

@@ -523,8 +523,21 @@ const MECANICAS = {
     });
     a.appendChild(grilla);
 
-    let abiertas = [], resueltas = 0, intentos = 0, bloqueado = false;
-    const marcador = () => estado(`Pares: ${resueltas}/${pares} · Intentos: ${intentos}`);
+    // El límite se cuenta en ERRORES, no en jugadas: con 6 pares hacen falta 6
+    // jugadas para ganar aunque tengas memoria perfecta, así que un tope de 5
+    // jugadas dejaría el minijuego imposible.
+    const maxErrores = cfg.maxErrores ?? 5;
+
+    let abiertas = [], resueltas = 0, errores = 0, bloqueado = false, cerrado = false;
+    const marcador = () => estado(
+      `Pares: ${resueltas}/${pares} · Intentos restantes: ${maxErrores - errores}`);
+
+    function cerrar(puntos) {
+      if (cerrado) return;
+      cerrado = true;
+      bloqueado = true;
+      setTimeout(() => listo(limitar(puntos)), 500);
+    }
 
     // Las fichas son retratos pixelados, no letras.
     const mostrar = (c, s) => { c.innerHTML = retrato(s) || s; };
@@ -532,13 +545,13 @@ const MECANICAS = {
 
     function dar(i) {
       const c = cartas[i];
-      if (bloqueado || c.classList.contains('vista') || c.classList.contains('lista')) return;
+      if (cerrado || bloqueado
+          || c.classList.contains('vista') || c.classList.contains('lista')) return;
       c.classList.add('vista');
       mostrar(c, fichas[i]);
       abiertas.push(i);
       if (abiertas.length < 2) return;
 
-      intentos++;
       const [p, q] = abiertas;
       abiertas = [];
       if (fichas[p] === fichas[q]) {
@@ -548,16 +561,21 @@ const MECANICAS = {
         });
         resueltas++;
         marcador();
-        if (resueltas === pares) {
-          // El mínimo posible son `pares` intentos; cada error de más descuenta.
-          setTimeout(() => listo(limitar(100 - (intentos - pares) * 12)), 500);
-        }
+        // Completarlo siempre alcanza para un resultado parcial: cada error
+        // descuenta 10, así que ni gastando los cinco intentos se pierde del todo.
+        if (resueltas === pares) cerrar(100 - errores * 10);
       } else {
+        errores++;
         bloqueado = true;
         marcador();
         setTimeout(() => {
           [p, q].forEach((k) => { cartas[k].classList.remove('vista'); tapar(cartas[k]); });
           bloqueado = false;
+          // Se quedó sin intentos: puntúa por los pares que llegó a armar.
+          if (errores >= maxErrores) {
+            estado(`Sin intentos. Pares: ${resueltas}/${pares}`);
+            cerrar((resueltas / pares) * 45);
+          }
         }, 620);
       }
     }
@@ -606,27 +624,47 @@ const MECANICAS = {
       .filter((w) => w.length <= N);
     const cantidad = cfg.cantidad ?? 3;
 
+    // Direcciones posibles. Todas van de izquierda a derecha o hacia abajo, o
+    // sea que las palabras se leen siempre en su sentido normal: la dificultad
+    // está en encontrarlas, no en leerlas al revés.
+    const DIRS = [
+      { df: 0, dc: 1 },   // →
+      { df: 1, dc: 0 },   // ↓
+      { df: 1, dc: 1 },   // ↘
+      { df: -1, dc: 1 },  // ↗
+    ];
+
+    // Dónde puede empezar una palabra de este largo en esta dirección, para que
+    // el último carácter siga cayendo dentro de la grilla.
+    const rango = (d, largo) => ({
+      fMin: d.df < 0 ? largo - 1 : 0,
+      fMax: d.df > 0 ? N - largo : N - 1,
+      cMin: d.dc < 0 ? largo - 1 : 0,
+      cMax: d.dc > 0 ? N - largo : N - 1,
+    });
+
     // Un intento completo de armar la grilla con las palabras dadas.
     function armar(palabras) {
       const grid = Array.from({ length: N }, () => Array(N).fill(''));
       const puestas = [];
       for (const palabra of palabras) {
-        for (let intento = 0; intento < 300; intento++) {
-          const horizontal = Math.random() < 0.5;
-          const largo = palabra.length;
-          const f = Math.floor(Math.random() * (horizontal ? N : N - largo + 1));
-          const c = Math.floor(Math.random() * (horizontal ? N - largo + 1 : N));
+        const largo = palabra.length;
+        for (let intento = 0; intento < 400; intento++) {
+          const d = DIRS[Math.floor(Math.random() * DIRS.length)];
+          const r = rango(d, largo);
+          if (r.fMax < r.fMin || r.cMax < r.cMin) continue;
+          const f = r.fMin + Math.floor(Math.random() * (r.fMax - r.fMin + 1));
+          const c = r.cMin + Math.floor(Math.random() * (r.cMax - r.cMin + 1));
+
           let entra = true;
           for (let k = 0; k < largo; k++) {
-            const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
-            if (grid[ff][cc] && grid[ff][cc] !== palabra[k]) { entra = false; break; }
+            const ch = grid[f + d.df * k][c + d.dc * k];
+            if (ch && ch !== palabra[k]) { entra = false; break; }
           }
           if (!entra) continue;
-          for (let k = 0; k < largo; k++) {
-            const ff = f + (horizontal ? 0 : k), cc = c + (horizontal ? k : 0);
-            grid[ff][cc] = palabra[k];
-          }
-          puestas.push({ palabra, f, c, horizontal });
+
+          for (let k = 0; k < largo; k++) grid[f + d.df * k][c + d.dc * k] = palabra[k];
+          puestas.push({ palabra, f, c, df: d.df, dc: d.dc });
           break;
         }
       }
@@ -681,21 +719,22 @@ const MECANICAS = {
     function tocar(f, c, b) {
       if (terminado) return;
       if (!inicio) { inicio = { f, c, b }; b.classList.add('sel'); t.refrescar(); return; }
-      const u = ubicadas.find((x) => !x.hecha && (
-        (x.f === inicio.f && x.c === inicio.c
-          && x.f + (x.horizontal ? 0 : x.palabra.length - 1) === f
-          && x.c + (x.horizontal ? x.palabra.length - 1 : 0) === c)
-        || (x.f === f && x.c === c
-          && x.f + (x.horizontal ? 0 : x.palabra.length - 1) === inicio.f
-          && x.c + (x.horizontal ? x.palabra.length - 1 : 0) === inicio.c)));
+      // Vale marcar de la primera a la última letra o al revés: se comparan las
+      // dos puntas contra los dos extremos de cada palabra ubicada.
+      const u = ubicadas.find((x) => {
+        if (x.hecha) return false;
+        const k = x.palabra.length - 1;
+        const fin = { f: x.f + x.df * k, c: x.c + x.dc * k };
+        return (x.f === inicio.f && x.c === inicio.c && fin.f === f && fin.c === c)
+            || (x.f === f && x.c === c && fin.f === inicio.f && fin.c === inicio.c);
+      });
 
       inicio.b.classList.remove('sel');
       if (u) {
         u.hecha = true;
         halladas++;
         for (let k = 0; k < u.palabra.length; k++) {
-          const ff = u.f + (u.horizontal ? 0 : k), cc = u.c + (u.horizontal ? k : 0);
-          celdas[ff * N + cc].classList.add('hallada');
+          celdas[(u.f + u.df * k) * N + (u.c + u.dc * k)].classList.add('hallada');
         }
         lista.querySelector(`[data-w="${u.palabra}"]`)?.classList.add('hallada');
         if (halladas === ubicadas.length) cerrar();

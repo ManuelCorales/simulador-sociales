@@ -266,13 +266,23 @@ entre los ocho — ninguno se repite dentro de la misma partida.
 | Mecánica | Minijuego | Cómo se juega | Puntaje |
 |---|---|---|---|
 | `tres_en_linea` | Tres en línea contra la otra lista | Sos las X contra una IA que juega bien el 65% de las veces | ganar 100 · empate 55 · perder 15 |
-| `memotest` | Memo test de autores | 4 pares de retratos pixelados, se dan vuelta de a dos | 100 menos 12 por cada intento de más |
+| `memotest` | Memo test de autores | 6 pares de retratos pixelados, se dan vuelta de a dos, **5 fallos permitidos** | completándolo, 100 menos 10 por fallo; si se acaban los intentos, pares hechos / 6 x 45 |
 | `traducir` | Traducir el paper | 5 términos en inglés, 3 opciones cada uno | aciertos / 5 |
-| `sopa` | Sopa de letras de la cátedra | Grilla 8x8, clic en la primera y la última letra | halladas / 3, **45s** |
+| `sopa` | Sopa de letras de la cátedra | Grilla 10x10, clic en la primera y la última letra. Horizontal, vertical y **las dos diagonales** | halladas / 3, **60s** |
 | `crucigrama` | Parcial contrarreloj | 3 palabras que se cruzan, una letra por casillero | letras correctas, **60s** |
 | `apellidos` | Escribir bien los apellidos | Se muestra «Bordié», hay que escribir Bourdieu | aciertos / 4 |
 | `conectar` | El mapa conceptual | Unir 9 puntos en orden | 100 menos 14 por error |
 | `molinete` | Saltar el molinete | Corredor tipo dino: clic o barra para saltar | molinetes pasados / 10 |
+
+En el memo test el tope de 5 se cuenta en **fallos**, no en jugadas: con 6 pares hacen
+falta 6 jugadas para ganar aunque tengas memoria perfecta, así que un tope de 5 jugadas
+dejaría el minijuego imposible. Completar el tablero siempre alcanza para un parcial, ni
+gastando los cinco intentos.
+
+En la sopa las palabras van en cuatro direcciones (→ ↓ ↘ ↗), todas de izquierda a derecha
+o hacia abajo: se leen siempre en su sentido normal y la dificultad está en encontrarlas,
+no en leerlas al revés. Medido sobre 3000 grillas, el 42% de las palabras cae en diagonal
+y ninguna grilla queda con palabras listadas que no estén puestas.
 
 **Sopa y crucigrama llevan reloj** porque son los únicos que se pueden no resolver: sin
 límite de tiempo, alguien que no encuentra las palabras queda trabado en la pantalla para
@@ -284,7 +294,8 @@ del parcial.
 `ilustraciones.js` tiene además una sección de **pixel art**: cada sprite es una grilla de
 caracteres, una letra por píxel, según `PALETA_PIXEL`. El punto es transparente.
 
-- `RETRATOS` — Belgrano, Sarmiento, Che y Eva Perón en 16x16, para las fichas del memo
+- `RETRATOS` — Belgrano, Sarmiento, Che, Eva Perón, Juana Azurduy y Rubinich en 16x16,
+  para las fichas del memo
   test. Se renderizan como SVG con `pixelASvg()`, que une los tramos horizontales del
   mismo color en vez de escupir un rect por píxel.
 - `SPRITES` — el estudiante del molinete en 14x18, con dos fotogramas de carrera y uno de

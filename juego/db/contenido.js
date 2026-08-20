@@ -860,7 +860,13 @@ const minijuegos = [
     instrucciones: T('Dale vuelta las fichas de a dos y encontrá los pares.'),
     fases: ['ingresante', 'intermedio', 'avanzado'],
     // Los símbolos son códigos de RETRATOS en public/ilustraciones.js
-    config: { pares: 4, columnas: 4, simbolos: ['belgrano', 'sarmiento', 'che', 'evita'] },
+    // 6 pares = 12 fichas en una grilla de 4x3. maxErrores se cuenta en fallos,
+    // no en jugadas: con 6 pares hacen falta 6 jugadas para ganar aunque no
+    // falles nunca, así que un tope de 5 jugadas sería imposible.
+    config: {
+      pares: 6, columnas: 4, maxErrores: 5,
+      simbolos: ['belgrano', 'sarmiento', 'che', 'evita', 'azurduy', 'rubinich'],
+    },
     resultados: [
       { codigo: 'exito',   min: 80, max: 100, texto: T('Te acordás hasta de los apellidos con tilde.'), stats: { conocimiento: 9 } },
       { codigo: 'parcial', min: 40, max: 79,  texto: T('La mitad te quedó.'),                           stats: { conocimiento: 4 } },
