@@ -40,10 +40,14 @@ const stats = [
 // ---------------------------------------------------------------------
 // FASES — 16 elecciones / puntos de control, una por cuatrimestre.
 // ---------------------------------------------------------------------
+// 9 eventos en 3 fases de 3, con un minijuego antes del cierre de cada una.
+// Total: 12 cartas. El minijuego cae en 2, 5 y 8 para que la última carta de la
+// partida sea siempre un evento: la decisión final la toma el jugador, no la
+// resuelve su puntería.
 const fases = [
-  { codigo: 'ingresante', nombre: 'Ingresante', ronda_desde: 1,  ronda_hasta: 5,  minijuego_despues_de: 3,  orden: 1 },
-  { codigo: 'intermedio', nombre: 'Intermedio', ronda_desde: 6,  ronda_hasta: 11, minijuego_despues_de: 9,  orden: 2 },
-  { codigo: 'avanzado',   nombre: 'Avanzado',   ronda_desde: 12, ronda_hasta: 16, minijuego_despues_de: 14, orden: 3 },
+  { codigo: 'ingresante', nombre: 'Ingresante', ronda_desde: 1, ronda_hasta: 3, minijuego_despues_de: 2, orden: 1 },
+  { codigo: 'intermedio', nombre: 'Intermedio', ronda_desde: 4, ronda_hasta: 6, minijuego_despues_de: 5, orden: 2 },
+  { codigo: 'avanzado',   nombre: 'Avanzado',   ronda_desde: 7, ronda_hasta: 9, minijuego_despues_de: 8, orden: 3 },
 ];
 
 // ---------------------------------------------------------------------
@@ -76,7 +80,7 @@ const eventos = [
         // Resultado condicional: "si el jugador tiene guita pega onda".
         { peso: 30, cond: [{ tipo: 'stat', stat: 'guita', operador: '>=', valor: 45 }],
           texto: T('Resulta que militaba en Alternativa Académica y los abuelos tienen terrenos en la Pampa Húmeda. Como tenés con qué bancarte, pegás onda.'),
-          stats: { guita: 12, fama: 5 } },
+          stats: { guita: 16, fama: 5 } },
         { peso: 30, cond: [{ tipo: 'stat', stat: 'guita', operador: '<', valor: 45 }],
           texto: T('Resulta que militaba en Alternativa Académica y los abuelos tienen terrenos en la Pampa Húmeda. No tenés un mango y se te va la chance.'),
           stats: { fama: -5 } },
@@ -91,15 +95,15 @@ const eventos = [
     texto: T('Te quedaste ranchando hasta cualquier hora con los pibes y vivís en Temperley. Llegás a la avenida y ves que se te va el último bondi.'),
     respuestas: [
       { texto: T('Corrés el bondi.'), gesto: 'der', efectos: [
-        { peso: 50, texto: T('Llegás, pero se te abrió la mochila y se te cayó todo. En el camino quedaron tus apuntes sobre Weber, Hobbes y Ofelia Fernández. Habrá que empezar de nuevo.'), stats: { conocimiento: -10, guita: -8 } },
+        { peso: 50, texto: T('Llegás, pero se te abrió la mochila y se te cayó todo. En el camino quedaron tus apuntes sobre Weber, Hobbes y Ofelia Fernández. Habrá que empezar de nuevo.'), stats: { conocimiento: -10, guita: -7 } },
         { peso: 50, texto: G(
           'Te tropezás y caés. Te ayuda una chica que iba a subir y se quedó preocupada por tu caída. Vive en tu zona y cursa T. S. Es el alma más noble que conociste. Se van a tomar algo hasta cualquier hora. Contás la anécdota y tus amigos te cambian el apodo por Lilita Corrió.',
           'Te tropezás y caés. Te ayuda un chico que iba a subir y se quedó preocupado por tu caída. Vive en tu zona y cursa T. S. Es el alma más noble que conociste. Se van a tomar algo hasta cualquier hora. Contás la anécdota y tus amigos te cambian el apodo por Lilita Corrió.',
           'Te tropezás y caés. Te ayuda alguien que iba a subir y se quedó preocupade por tu caída. Vive en tu zona y cursa T. S. Es el alma más noble que conociste. Se van a tomar algo hasta cualquier hora. Contás la anécdota y tus amigos te cambian el apodo por Lilita Corrió.'),
-          stats: { guita: -8, fama: 7, conocimiento: 8 } },
+          stats: { guita: -7, fama: 7, conocimiento: 9 } },
       ]},
       { texto: T('No te apurás. Ya llegará otro.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('Estuviste tres horas chupando frío. Te quisieron robar y las chicas que laburan en Consti saltaron por vos. Les contaste lo que estudiabas y arrancaste una movida contra la represión policial en el barrio.'), stats: { guita: -8, fama: 7, politica: 10 } },
+        { peso: 100, texto: T('Estuviste tres horas chupando frío. Te quisieron robar y las chicas que laburan en Consti saltaron por vos. Les contaste lo que estudiabas y arrancaste una movida contra la represión policial en el barrio.'), stats: { guita: -7, fama: 7, politica: 10 } },
       ]},
     ],
   },
@@ -110,10 +114,10 @@ const eventos = [
     texto: T('Entra una persona a pedir plata a la facultad. Dice que lo persigue Máximo Kirchner, que necesita irse del país porque tiene información que puede llevar al arresto de Cristina Fernández de Kirchner.'),
     respuestas: [
       { texto: T('Le das plata.'), gesto: 'der', efectos: [
-        { peso: 100, texto: T('El tipo te agradece y dice que quiere mostrarte algo. Te lleva al baño. Tenés miedo pero lo seguís. "Acercate", susurra. Mete la mano por debajo del cuello y se saca una máscara: ¡es Nisman!'), stats: { guita: -8, politica: 10 } },
+        { peso: 100, texto: T('El tipo te agradece y dice que quiere mostrarte algo. Te lleva al baño. Tenés miedo pero lo seguís. "Acercate", susurra. Mete la mano por debajo del cuello y se saca una máscara: ¡es Nisman!'), stats: { guita: -7, politica: 10 } },
       ]},
       { texto: T('No le creés.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('El tipo se aleja sin problema. Antes de doblar la esquina un francotirador lo fulmina con un tiro en la frente. No llegás a ver de dónde dispararon, pero hay humo en una ventana de San José.'), stats: { guita: 8, fama: -8, violencia: 5 } },
+        { peso: 100, texto: T('El tipo se aleja sin problema. Antes de doblar la esquina un francotirador lo fulmina con un tiro en la frente. No llegás a ver de dónde dispararon, pero hay humo en una ventana de San José.'), stats: { guita: 11, fama: -8, violencia: 5 } },
       ]},
     ],
   },
@@ -129,10 +133,10 @@ const eventos = [
         { peso: 100, texto: G('De tanto silencio te quedaste dormido. Llegaste tarde a la clase, pero la siesta te hizo bien: lo poco que estuviste participaste un montón.',
                               'De tanto silencio te quedaste dormida. Llegaste tarde a la clase, pero la siesta te hizo bien: lo poco que estuviste participaste un montón.',
                               'De tanto silencio te quedaste dormide. Llegaste tarde a la clase, pero la siesta te hizo bien: lo poco que estuviste participaste un montón.'),
-          stats: { conocimiento: 6, fama: 4 } },
+          stats: { conocimiento: 7, fama: 4 } },
       ]},
       { texto: T('Te encerrás en un aula vacía.'), efectos: [
-        { peso: 100, texto: T('A los quince minutos entró un grupo para una clase y, como te dio vergüenza, te quedaste. Terminaste aprendiendo mucho sobre Martín Lutero.'), stats: { conocimiento: 10 } },
+        { peso: 100, texto: T('A los quince minutos entró un grupo para una clase y, como te dio vergüenza, te quedaste. Terminaste aprendiendo mucho sobre Martín Lutero.'), stats: { conocimiento: 11 } },
       ]},
       { texto: T('Agarrás una mesa en el foyer.'), efectos: [
         { peso: 100, texto: T('Mala luz y letra minúscula. Entraste a cursar sin ver un pito y encima no aprendiste un carajo.'), stats: { conocimiento: -8 } },
@@ -146,7 +150,7 @@ const eventos = [
     texto: T('Tenés que hacer un trabajo de investigación en grupo y hay que elegir tema.'),
     respuestas: [
       { texto: T('Elegís el tema difícil. No se trata solo de aprobar la materia.'), gesto: 'der', efectos: [
-        { peso: 100, texto: T('Le dedicaste una banda de tiempo, quedó bien y le gustó a la cátedra.'), stats: { conocimiento: 15, fama: 5, guita: -5 } },
+        { peso: 100, texto: T('Le dedicaste una banda de tiempo, quedó bien y le gustó a la cátedra.'), stats: { conocimiento: 17, fama: 5, guita: -4 } },
       ]},
       { texto: T('Elegís un tema papita que mucho no te interesa.'), gesto: 'izq', efectos: [
         { peso: 100, texto: T('Lo hiciste el día anterior. Te sacaste la materia de encima y fuiste a final. En el medio te hiciste nuevos facuamigos igual de vagos que vos.'), stats: { conocimiento: -6, fama: 7 } },
@@ -161,13 +165,13 @@ const eventos = [
     respuestas: [
       { texto: T('Dejás grabando el audio y te dormís. Si el profesor se da cuenta te podés ganar el odio de toda la cursada.'), efectos: [
         { peso: 50, texto: T('El profesor se da cuenta y te hace la vida imposible hasta el final. Recursás el cuatrimestre siguiente, pero en la otra cátedra.'), stats: { conocimiento: -10, fama: -8 } },
-        { peso: 50, texto: T('El profesor se da cuenta pero le chupa un huevo. Es más: te ofrece un drive con los audios de todas las clases. Tu Samsung Pocket lo agradece y aprendés un montón.'), stats: { conocimiento: 12 } },
+        { peso: 50, texto: T('El profesor se da cuenta pero le chupa un huevo. Es más: te ofrece un drive con los audios de todas las clases. Tu Samsung Pocket lo agradece y aprendés un montón.'), stats: { conocimiento: 13 } },
       ]},
       { texto: T('Te vas a comprar un café para remontarla.'), efectos: [
-        { peso: 100, texto: T('El exquisito café de las máquinas del CeXso te hace efecto. La rompés. Y todo por 2000 pesos argensimios.'), stats: { conocimiento: 8, guita: -6 } },
+        { peso: 100, texto: T('El exquisito café de las máquinas del CeXso te hace efecto. La rompés. Y todo por 2000 pesos argensimios.'), stats: { conocimiento: 9, guita: -5 } },
       ]},
       { texto: T('Salís y hablás un rato con tu facuamigo que está haciendo tiempo.'), efectos: [
-        { peso: 100, texto: T('Te cuenta que va a ser papá y que los pañales están muy caros. Volvés y le metés con todo a la clase: en un futuro esos pañales no se van a pagar solos.'), stats: { conocimiento: 8, fama: 5 } },
+        { peso: 100, texto: T('Te cuenta que va a ser papá y que los pañales están muy caros. Volvés y le metés con todo a la clase: en un futuro esos pañales no se van a pagar solos.'), stats: { conocimiento: 9, fama: 5 } },
       ]},
     ],
   },
@@ -181,10 +185,10 @@ const eventos = [
         { peso: 100, texto: G('Los demás te lo agradecen y el profesor también, aunque quedás medio chupamedias. El pibe no volvió a acotar nunca más en su vida.',
                               'Los demás te lo agradecen y el profesor también, aunque quedás medio chupamedias. El pibe no volvió a acotar nunca más en su vida.',
                               'Los demás te lo agradecen y el profesor también, aunque quedás medio chupamedias. El pibe no volvió a acotar nunca más en su vida.'),
-          stats: { conocimiento: 8, fama: -5 } },
+          stats: { conocimiento: 9, fama: -5 } },
       ]},
       { texto: T('No decís nada. La mejor forma de aprender es equivocándose.'), efectos: [
-        { peso: 100, texto: T('A la clase siguiente el pibe dejó la materia.'), stats: { conocimiento: 5 } },
+        { peso: 100, texto: T('A la clase siguiente el pibe dejó la materia.'), stats: { conocimiento: 6 } },
       ]},
       { texto: T('Agarrás el fierro caliente y le explicás lo que está diciendo mal.'), efectos: [
         { peso: 100, texto: T('Vos también lo decís mal. El profesor abandona la cátedra por estar rodeado de pelotudos. Ahora es influencer de tarot marxista.'), stats: { conocimiento: -8, fama: -8 } },
@@ -207,7 +211,7 @@ const eventos = [
         { peso: 100, texto: T('Quisiste hacer un chiste y no salió. Los demás te miraron medio raro.'), stats: { fama: -8 } },
       ]},
       { texto: T('"Porque no saben hacer otra cosa que seguir el fetiche del dinero."'), efectos: [
-        { peso: 100, texto: T('A la profe le cerró bastante tu respuesta y te lo hizo saber. Te motivaste y mejoraste tu desempeño.'), stats: { conocimiento: 12, politica: 6 } },
+        { peso: 100, texto: T('A la profe le cerró bastante tu respuesta y te lo hizo saber. Te motivaste y mejoraste tu desempeño.'), stats: { conocimiento: 13, politica: 6 } },
       ]},
     ],
   },
@@ -225,7 +229,7 @@ const eventos = [
       ]},
       { texto: T('Armás un linchamiento sorpresa para tu amigo. La historia se repite.'), efectos: [
         { peso: 100, texto: T('Se zarpan y lo matan. Mejor que ser oprimido.'), stats: { fama: 9, politica: -9, conocimiento: -8, violencia: 25 },
-          aviso: { evento: 'av_linchamiento', demora_min: 2, demora_max: 5 } },
+          aviso: { evento: 'av_linchamiento', demora_min: 1, demora_max: 3 } },
       ]},
     ],
   },
@@ -241,7 +245,7 @@ const eventos = [
       ]},
       { texto: T('Video motivacional de Locomotora Oliveras, un mango loco y un resumen de sesenta páginas.'), efectos: [
         { peso: 80, texto: T('Te fue como el orto, pero las ganas de comerte el mundo no te las saca nadie.'), stats: { conocimiento: -5, fama: 7 } },
-        { peso: 20, texto: T('La cafeína llegó al cerebro y saliste de la caverna, así como decía Platón. Accediste a las Ideas y a partir de ahora creés en la Matrix. Te sacaste un 10.'), stats: { conocimiento: 20, fama: 5 } },
+        { peso: 20, texto: T('La cafeína llegó al cerebro y saliste de la caverna, así como decía Platón. Accediste a las Ideas y a partir de ahora creés en la Matrix. Te sacaste un 10.'), stats: { conocimiento: 22, fama: 5 } },
       ]},
     ],
   },
@@ -253,10 +257,10 @@ const eventos = [
     respuestas: [
       { texto: T('Me quedo libre pero conozco al Pity.'), gesto: 'der', efectos: [
         { peso: 100, texto: T('Homero tiene más valor social que toda la obra de Talcott Parsons. La foto con él se la mostrás hasta a los perros.'), stats: { fama: 13, conocimiento: -10 },
-          aviso: { evento: 'av_pity', demora_min: 2, demora_max: 4 } },
+          aviso: { evento: 'av_pity', demora_min: 1, demora_max: 2 } },
       ]},
       { texto: T('Voy a cursar. No me queda otra.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('La próxima será. Cursaste con la cara hecha percha pero cursaste.'), stats: { conocimiento: 10, fama: -5 } },
+        { peso: 100, texto: T('La próxima será. Cursaste con la cara hecha percha pero cursaste.'), stats: { conocimiento: 11, fama: -5 } },
       ]},
     ],
   },
@@ -287,11 +291,11 @@ const eventos = [
     texto: T('Te ofrecen un trabajo nocturno en una cadena muy conocida de hamburguesas. Por el horario capaz que hasta podés comerte alguna.'),
     respuestas: [
       { texto: T('Aceptás el laburo.'), gesto: 'der', efectos: [
-        { peso: 75, texto: T('Ganás plata pero estás más cansado y perdés horas de cursada. Con lo recaudado comprás sanguchitos y café en el buffet.'), stats: { guita: 18, conocimiento: -10 } },
-        { peso: 25, texto: T('Hacés una monografía para una materia contando el sistema de cooperación entre compañeros en el espacio de trabajo. Te ganaste el aplauso de los profesores.'), stats: { guita: 12, conocimiento: 3, fama: 5 } },
+        { peso: 75, texto: T('Ganás plata pero estás más cansado y perdés horas de cursada. Con lo recaudado comprás sanguchitos y café en el buffet.'), stats: { guita: 24, conocimiento: -10 } },
+        { peso: 25, texto: T('Hacés una monografía para una materia contando el sistema de cooperación entre compañeros en el espacio de trabajo. Te ganaste el aplauso de los profesores.'), stats: { guita: 16, conocimiento: 3, fama: 5 } },
       ]},
       { texto: T('No lo aceptás.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('Seguís con la tuya, pero el mes viene finito.'), stats: { guita: -10, conocimiento: 5 } },
+        { peso: 100, texto: T('Seguís con la tuya, pero el mes viene finito.'), stats: { guita: -9, conocimiento: 6 } },
       ]},
     ],
   },
@@ -302,13 +306,13 @@ const eventos = [
     texto: T('Un facuamigo te invita a la feria del libro. Entrás a un stand y ves ese mega libro sobre textos desconocidos del profesor de teóricos de tu materia favorita. Te fijás la billetera y no llegás ni financiado en doce cuotas.'),
     respuestas: [
       { texto: T('Te lo robás. Riesgo de que te vean.'), gesto: 'der', efectos: [
-        { peso: 35, texto: T('Lo llevás a la clase, se lo mostrás, te lo firma y te suma al grupo de investigación.'), stats: { conocimiento: 15, fama: 9, politica: 6 },
-          aviso: { evento: 'av_grupo_investigacion', demora_min: 3, demora_max: 6 } },
-        { peso: 40, texto: T('Lo llevás a la clase, lo ve, le chupa un huevo y lo terminás vendiendo en Parque Centenario por la mitad de lo que sale nuevo.'), stats: { guita: 15, conocimiento: 4 } },
-        { peso: 25, texto: T('Te vieron. El de seguridad te hizo vaciar la mochila delante de toda la fila.'), stats: { guita: -10, fama: -10 } },
+        { peso: 35, texto: T('Lo llevás a la clase, se lo mostrás, te lo firma y te suma al grupo de investigación.'), stats: { conocimiento: 17, fama: 9, politica: 6 },
+          aviso: { evento: 'av_grupo_investigacion', demora_min: 1, demora_max: 3 } },
+        { peso: 40, texto: T('Lo llevás a la clase, lo ve, le chupa un huevo y lo terminás vendiendo en Parque Centenario por la mitad de lo que sale nuevo.'), stats: { guita: 20, conocimiento: 4 } },
+        { peso: 25, texto: T('Te vieron. El de seguridad te hizo vaciar la mochila delante de toda la fila.'), stats: { guita: -9, fama: -10 } },
       ]},
       { texto: T('No arriesgás: un libro de Ediciones Libertador y un pancho.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('El libro tiene la traducción hecha con los pies, pero algo entendiste. El pancho estaba bien.'), stats: { guita: -5, conocimiento: 6 } },
+        { peso: 100, texto: T('El libro tiene la traducción hecha con los pies, pero algo entendiste. El pancho estaba bien.'), stats: { guita: -4, conocimiento: 7 } },
       ]},
     ],
   },
@@ -319,16 +323,16 @@ const eventos = [
     texto: T('Vas por la mitad de la carrera y estás cansado de no poder subirte a ninguna porque no tenés un mango. En eso te acercan una oferta misteriosa: armarle la campaña electoral a un candidato ultra sanguinario de los derechos sociales. Pagan bien y podría ser el comienzo de una carrera política prolífica. Si se enteran tus facuamigos, es el entierro sepulcral.'),
     respuestas: [
       { texto: T('Agarrás el trabajo. Si no se enteran no pasa nada.'), efectos: [
-        { peso: 65, texto: T('Nadie se enteró. Cobraste como nunca en tu vida.'), stats: { guita: 20, politica: 6 } },
-        { peso: 35, texto: T('Alguien te vio saliendo del búnker. Por ahora no dijeron nada.'), stats: { guita: 20, politica: 6 },
-          aviso: { evento: 'av_campania', demora_min: 2, demora_max: 5 } },
+        { peso: 65, texto: T('Nadie se enteró. Cobraste como nunca en tu vida.'), stats: { guita: 27, politica: 6 } },
+        { peso: 35, texto: T('Alguien te vio saliendo del búnker. Por ahora no dijeron nada.'), stats: { guita: 27, politica: 6 },
+          aviso: { evento: 'av_campania', demora_min: 1, demora_max: 3 } },
       ]},
       { texto: T('Eso es inmoral y no condice con mis ideales. Mi oportunidad ya llegará.'), efectos: [
-        { peso: 100, texto: T('Te quedaste sin la plata y con la conciencia limpia. Se paga con fideos.'), stats: { guita: -12, politica: 10 } },
+        { peso: 100, texto: T('Te quedaste sin la plata y con la conciencia limpia. Se paga con fideos.'), stats: { guita: -10, politica: 10 } },
       ]},
       { texto: T('Entrás y lo saboteás desde adentro. Héroe o villano, no hay lugar para los tibios.'), efectos: [
-        { peso: 50, texto: T('Saliste con la plata y con el spot arruinado. Te convertiste en leyenda de pasillo.'), stats: { guita: 12, politica: 18, fama: 11 } },
-        { peso: 50, texto: T('Te descubrieron y desencadenaste una campaña sucia contra toda la facultad.'), stats: { guita: 8, politica: -11, fama: -10, violencia: 8 } },
+        { peso: 50, texto: T('Saliste con la plata y con el spot arruinado. Te convertiste en leyenda de pasillo.'), stats: { guita: 16, politica: 18, fama: 11 } },
+        { peso: 50, texto: T('Te descubrieron y desencadenaste una campaña sucia contra toda la facultad.'), stats: { guita: 11, politica: -11, fama: -10, violencia: 8 } },
       ]},
     ],
   },
@@ -339,13 +343,13 @@ const eventos = [
     texto: T('Momento cúlmine: estás a punto de conseguir una beca y tu viejo se queda sin laburo.'),
     respuestas: [
       { texto: T('Entrás a trabajar en McDonalds. La beca puede esperar un año.'), efectos: [
-        { peso: 100, texto: T('Ayudás a la familia. La beca quizá no se repita nunca.'), stats: { conocimiento: -12, guita: 20 } },
+        { peso: 100, texto: T('Ayudás a la familia. La beca quizá no se repita nunca.'), stats: { conocimiento: -12, guita: 27 } },
       ]},
       { texto: T('Entrás a trabajar y encima te matás estudiando para llegar a la beca.'), efectos: [
-        { peso: 100, texto: T('Te recomendaron dedicación total y presentaste un trabajo flojo. Defraudaste a la cátedra.'), stats: { conocimiento: -8, fama: -10, guita: 12 } },
+        { peso: 100, texto: T('Te recomendaron dedicación total y presentaste un trabajo flojo. Defraudaste a la cátedra.'), stats: { conocimiento: -8, fama: -10, guita: 16 } },
       ]},
       { texto: T('Te peleás con tu familia a muerte.'), efectos: [
-        { peso: 100, texto: T('Te mudaste a lo de tu abuela, a tres horas de la facultad, y quemaste sus ahorros para subsistir.'), stats: { guita: -15, conocimiento: 15 } },
+        { peso: 100, texto: T('Te mudaste a lo de tu abuela, a tres horas de la facultad, y quemaste sus ahorros para subsistir.'), stats: { guita: -13, conocimiento: 17 } },
       ]},
     ],
   },
@@ -356,10 +360,10 @@ const eventos = [
     texto: T('Tenés que completar las "Prácticas educativas" del nuevo plan de estudios.'),
     respuestas: [
       { texto: T('Las completás en una empresa.'), efectos: [
-        { peso: 100, texto: T('En realidad te metieron precarizado en un call center. No aprendiste nada de la carrera, pero la experiencia te sirve para el CV. Te juran que cuando tengas el título te ponen en blanco.'), stats: { guita: 15, conocimiento: -10 } },
+        { peso: 100, texto: T('En realidad te metieron precarizado en un call center. No aprendiste nada de la carrera, pero la experiencia te sirve para el CV. Te juran que cuando tengas el título te ponen en blanco.'), stats: { guita: 20, conocimiento: -10 } },
       ]},
       { texto: T('Hacés un taller de investigación con práctica territorial.'), efectos: [
-        { peso: 100, texto: T('Hiciste un lindo informe pero te embarraste las zapatillas y, aunque las limpiaste con Vanish, se echaron a perder. Así es la calle, pibe.'), stats: { conocimiento: 15, guita: -8 } },
+        { peso: 100, texto: T('Hiciste un lindo informe pero te embarraste las zapatillas y, aunque las limpiaste con Vanish, se echaron a perder. Así es la calle, pibe.'), stats: { conocimiento: 17, guita: -7 } },
       ]},
     ],
   },
@@ -370,11 +374,11 @@ const eventos = [
     texto: T('Llegó una oferta laboral al mail de la carrera: 8 horas por día, $200.000 al mes. Tenés el perfil perfecto para el puesto.'),
     respuestas: [
       { texto: T('Tirás el CV.'), gesto: 'der', efectos: [
-        { peso: 30, texto: T('Quedaste. Ocho horas por día, pero algo se aprende.'), stats: { guita: 18, conocimiento: 5 } },
-        { peso: 70, texto: T('No quedaste. Te dijeron que buscaban "más experiencia".'), stats: { guita: -8, conocimiento: 8 } },
+        { peso: 30, texto: T('Quedaste. Ocho horas por día, pero algo se aprende.'), stats: { guita: 24, conocimiento: 6 } },
+        { peso: 70, texto: T('No quedaste. Te dijeron que buscaban "más experiencia".'), stats: { guita: -7, conocimiento: 9 } },
       ]},
       { texto: T('No tirás. Lo bueno ya va a llegar.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('Seguís usando tus horas libres para leer a Durkheim.'), stats: { conocimiento: 12 } },
+        { peso: 100, texto: T('Seguís usando tus horas libres para leer a Durkheim.'), stats: { conocimiento: 13 } },
       ]},
     ],
   },
@@ -387,16 +391,16 @@ const eventos = [
     notas_autor: 'Único evento con salida de la carrera (tercera respuesta).',
     respuestas: [
       { texto: T('Timbear en el sinoca de Puerto Madero. El rojo es tu mejor amigo.'), efectos: [
-        { peso: 45, texto: T('Salió el rojo tres veces seguidas. Te fuiste con los bolsillos llenos y una sensación peligrosa.'), stats: { guita: 25, conocimiento: -5 } },
-        { peso: 55, texto: T('Perdiste hasta la SUBE. Volviste caminando desde Puerto Madero.'), stats: { guita: -18, fama: -5 } },
+        { peso: 45, texto: T('Salió el rojo tres veces seguidas. Te fuiste con los bolsillos llenos y una sensación peligrosa.'), stats: { guita: 34, conocimiento: -5 } },
+        { peso: 55, texto: T('Perdiste hasta la SUBE. Volviste caminando desde Puerto Madero.'), stats: { guita: -15, fama: -5 } },
       ]},
       { texto: T('A partir de ahora solo vas a comer empanadas de perro. Dicen que provocan amnesia.'), efectos: [
-        { peso: 100, texto: T('Ahorrás una fortuna. El problema es que ya no te acordás de la unidad 3.'), stats: { guita: 12, conocimiento: -12 } },
+        { peso: 100, texto: T('Ahorrás una fortuna. El problema es que ya no te acordás de la unidad 3.'), stats: { guita: 16, conocimiento: -12 } },
       ]},
       { texto: T('Dejás la carrera. Estudiar es para los giles.'), efectos: [
         { peso: 100, termina_partida: true, es_abandono: true,
           texto: T('Firmaste la baja en cinco minutos. Afuera hacía sol y no te acordabas de la última vez que habías dormido bien.'),
-          stats: { guita: 15 } },
+          stats: { guita: 20 } },
       ]},
     ],
   },
@@ -407,13 +411,13 @@ const eventos = [
     texto: T('Abren las postulaciones para las becas de trabajo en el comedor. Pero estás en contra de la conducción y tenés tuits bardeando al presidente del CeXso.'),
     respuestas: [
       { texto: T('Borrás todo y te hacés pasar por el militante más fiel de todos.'), efectos: [
-        { peso: 100, texto: T('Entraste. Comés todos los días y te odiás un poco cada mediodía.'), stats: { guita: 15, politica: -9 } },
+        { peso: 100, texto: T('Entraste. Comés todos los días y te odiás un poco cada mediodía.'), stats: { guita: 20, politica: -9 } },
       ]},
       { texto: T('Entrás pero se la boqueás a todos. En una de esas te comés algún bife.'), efectos: [
-        { peso: 100, texto: T('Duraste tres semanas, pero la anécdota te la contás solo.'), stats: { guita: 8, fama: 9, politica: -7, violencia: 5 } },
+        { peso: 100, texto: T('Duraste tres semanas, pero la anécdota te la contás solo.'), stats: { guita: 11, fama: 9, politica: -7, violencia: 5 } },
       ]},
       { texto: T('No comprás con el CeXso. Completás el formulario con los datos de tu mayor enemigo.'), efectos: [
-        { peso: 100, texto: T('Se lo dieron a él. Ahora te ve todos los días desde atrás del mostrador.'), stats: { guita: -10, fama: 7, politica: -5 } },
+        { peso: 100, texto: T('Se lo dieron a él. Ahora te ve todos los días desde atrás del mostrador.'), stats: { guita: -9, fama: 7, politica: -5 } },
       ]},
     ],
   },
@@ -424,10 +428,10 @@ const eventos = [
     texto: T('Tu abuela te dio plata para que te compraras los libros de la cursada. Ella lucha contra la muerte para verte con el título. Pero el mismo día un amigo te hace una oferta irresistible: las últimas entradas de reventa para el Gran Rex.'),
     respuestas: [
       { texto: T('El sentido de vivir es transitar la experiencia por sí misma. El título ya llegará.'), gesto: 'der', efectos: [
-        { peso: 100, texto: T('Fue una noche irrepetible. Los libros los bajaste en PDF y nunca los abriste.'), stats: { guita: -15, conocimiento: -10, fama: 11 } },
+        { peso: 100, texto: T('Fue una noche irrepetible. Los libros los bajaste en PDF y nunca los abriste.'), stats: { guita: -13, conocimiento: -10, fama: 11 } },
       ]},
       { texto: T('Me parte al medio la nona. Lo hago más por ella que por mí.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('Compraste hasta el último apunte. Le mandaste una foto y la puso en la heladera.'), stats: { conocimiento: 15, guita: 5 } },
+        { peso: 100, texto: T('Compraste hasta el último apunte. Le mandaste una foto y la puso en la heladera.'), stats: { conocimiento: 17, guita: 7 } },
       ]},
     ],
   },
@@ -444,14 +448,14 @@ const eventos = [
         { peso: 100, texto: G('Linchamiento masivo. Los sentimientos reprimidos por el pueblo contra el gobierno se esparcen sobre tu cabeza. La cana no se mete para salvarte. De tantas piñas quedás tonto y borrás de tu cabeza todo lo que viste el último cuatrimestre. Te roban hasta las zapatillas.',
                               'Linchamiento masivo. Los sentimientos reprimidos por el pueblo contra el gobierno se esparcen sobre tu cabeza. La cana no se mete para salvarte. De tantas piñas quedás tonta y borrás de tu cabeza todo lo que viste el último cuatrimestre. Te roban hasta las zapatillas.',
                               'Linchamiento masivo. Los sentimientos reprimidos por el pueblo contra el gobierno se esparcen sobre tu cabeza. La cana no se mete para salvarte. De tantas piñas quedás tonte y borrás de tu cabeza todo lo que viste el último cuatrimestre. Te roban hasta las zapatillas.'),
-          stats: { guita: -12, conocimiento: -18, violencia: 10 } },
+          stats: { guita: -10, conocimiento: -18, violencia: 10 } },
       ]},
       { texto: T('Emprendés un discurso a viva voz demostrando todo lo que leíste.'), efectos: [
         { peso: 40, texto: G('La gente te sigue y te convertís en un líder genuino de la clase obrera.',
                              'La gente te sigue y te convertís en una líder genuina de la clase obrera.',
                              'La gente te sigue y te convertís en un liderazgo genuino de la clase obrera.'),
-          stats: { fama: 13, conocimiento: 15, politica: 18 } },
-        { peso: 60, texto: T('La gente te ignora y una señora al pasar te suelta un "zurdo de mierda" con garso incluido. Te tragás la frustración y mejorás la oratoria.'), stats: { fama: -8, conocimiento: 8 } },
+          stats: { fama: 13, conocimiento: 17, politica: 18 } },
+        { peso: 60, texto: T('La gente te ignora y una señora al pasar te suelta un "zurdo de mierda" con garso incluido. Te tragás la frustración y mejorás la oratoria.'), stats: { fama: -8, conocimiento: 9 } },
       ]},
     ],
   },
@@ -464,7 +468,7 @@ const eventos = [
              'Te quedás estudiando hasta tarde con tu compa. Te nota muy tense y saca algo que te podría ayudar: un porro. No fumaste nunca en tu vida.'),
     respuestas: [
       { texto: T('Fumar.'), gesto: 'der', efectos: [
-        { peso: 50, texto: T('Te relaja y potencia tus conocimientos. Al otro día entrás a rendir relajado e imparable.'), stats: { conocimiento: 15 } },
+        { peso: 50, texto: T('Te relaja y potencia tus conocimientos. Al otro día entrás a rendir relajado e imparable.'), stats: { conocimiento: 17 } },
         { peso: 50, texto: T('Pegó mal y terminaste vomitando. Quedaste de cama toda la noche recordando a tu ex. Al otro día, en el examen, no pensabas en otra cosa que en cuando salían a tomar helado.'), stats: { conocimiento: -10, fama: -5 } },
       ]},
       { texto: T('Vas a la segura y lidiás con los nervios a la antigua.'), gesto: 'izq', efectos: [
@@ -483,15 +487,15 @@ const eventos = [
     texto: T('Te anotaste a cuatro materias este cuatrimestre y no podés con tu vida. En medio de la bibliografía obligatoria encontraste un autor raro del que nadie habla. Te fascina y querés meterte a leer todos sus libros.'),
     respuestas: [
       { texto: T('La curiosidad es más grande que vos. No podés negar tu instinto.'), efectos: [
-        { peso: 50, texto: T('Dejaste todo por lo que te emocionaba. El titular te apadrinó. Aprobaste una materia de cuatro, pero tenés asegurado el carguito de profe de práctico para cuando te recibas. En una de esas escribís un libro.'), stats: { conocimiento: 15, politica: 12 } },
+        { peso: 50, texto: T('Dejaste todo por lo que te emocionaba. El titular te apadrinó. Aprobaste una materia de cuatro, pero tenés asegurado el carguito de profe de práctico para cuando te recibas. En una de esas escribís un libro.'), stats: { conocimiento: 17, politica: 12 } },
         { peso: 50, texto: G('Le metiste a full pero te pinchaste. Te diste cuenta de por qué no le daban tanta pelota en la academia. De igual manera estás orgulloso de vos: nunca habías sido tan valiente por algo en lo que creías.',
                              'Le metiste a full pero te pinchaste. Te diste cuenta de por qué no le daban tanta pelota en la academia. De igual manera estás orgullosa de vos: nunca habías sido tan valiente por algo en lo que creías.',
                              'Le metiste a full pero te pinchaste. Te diste cuenta de por qué no le daban tanta pelota en la academia. De igual manera estás orgullose de vos: nunca habías sido tan valiente por algo en lo que creías.'),
-          stats: { politica: 10, conocimiento: 6 } },
+          stats: { politica: 10, conocimiento: 7 } },
       ]},
       { texto: T('La prioridad es aprobar. Cuanto antes te egreses, antes vas a poder investigar lo que quieras.'), efectos: [
         { peso: 80, texto: T('No lo retomaste y murió en el olvido.'), stats: { conocimiento: -8 } },
-        { peso: 20, texto: T('Lo retomaste en el verano e hiciste una monografía. Lo bueno sabe esperar.'), stats: { conocimiento: 12 } },
+        { peso: 20, texto: T('Lo retomaste en el verano e hiciste una monografía. Lo bueno sabe esperar.'), stats: { conocimiento: 13 } },
       ]},
       { texto: T('Escribís un artículo reducido para un fanzine boludo que circula por la facultad.'), efectos: [
         { peso: 100, texto: T('Te interesa, pero dedicarle tanto esfuerzo te pareció al pedo. Igual lo leyó bastante gente.'), stats: { fama: 9 } },
@@ -527,17 +531,17 @@ const eventos = [
              'Venís de un teórico de cuatro horas y todavía te falta cursar el práctico. Estás limade y tenés una lija tremenda.'),
     respuestas: [
       { texto: T('Dos empanadas de carne y una de cheeseburger en el Rip Pizza de la esquina.'), efectos: [
-        { peso: 50, texto: T('Te intoxicaste y te internaron. A la semana salió la noticia: estas cadenas usaban un combinado de carne perruna y humana para las empanadas. Perdiste un cuatrimestre entero.'), stats: { conocimiento: -18, fama: 11, guita: -8 } },
-        { peso: 50, texto: T('Zafaste. Estaban baratas y llegaste al práctico con la panza llena y la cabeza en otro lado.'), stats: { guita: 5, conocimiento: -3 } },
+        { peso: 50, texto: T('Te intoxicaste y te internaron. A la semana salió la noticia: estas cadenas usaban un combinado de carne perruna y humana para las empanadas. Perdiste un cuatrimestre entero.'), stats: { conocimiento: -18, fama: 11, guita: -7 } },
+        { peso: 50, texto: T('Zafaste. Estaban baratas y llegaste al práctico con la panza llena y la cabeza en otro lado.'), stats: { guita: 7, conocimiento: -3 } },
       ]},
       { texto: T('Le hacés caso al señor misterioso de la puerta. Pancito relleno caliente.'), efectos: [
         { peso: 100, texto: G('A los cinco minutos el señor se ganó el Quini y te regala dos panes más. Te sentís Jesús: la suerte se reparte. Vas al práctico y la rompés todita. Te convertís en el favorito de la profe.',
                               'A los cinco minutos el señor se ganó el Quini y te regala dos panes más. Te sentís Jesús: la suerte se reparte. Vas al práctico y la rompés todita. Te convertís en la favorita de la profe.',
                               'A los cinco minutos el señor se ganó el Quini y te regala dos panes más. Te sentís Jesús: la suerte se reparte. Vas al práctico y la rompés todita. Te convertís en le favorite de la profe.'),
-          stats: { conocimiento: 12, guita: 8, politica: 10 } },
+          stats: { conocimiento: 13, guita: 11, politica: 10 } },
       ]},
       { texto: T('Comés en el comedor del centro.'), efectos: [
-        { peso: 100, texto: T('La que atiende te empieza a preguntar por tu situación académica y te habla de la crisis nacional que ya conocés. No sabés cómo fugarte y te perdés todo el práctico. Ahora no sabés qué entra en el parcial.'), stats: { guita: -5, conocimiento: -10, politica: 12 } },
+        { peso: 100, texto: T('La que atiende te empieza a preguntar por tu situación académica y te habla de la crisis nacional que ya conocés. No sabés cómo fugarte y te perdés todo el práctico. Ahora no sabés qué entra en el parcial.'), stats: { guita: -4, conocimiento: -10, politica: 12 } },
       ]},
     ],
   },
@@ -560,7 +564,7 @@ const eventos = [
         { peso: 100, texto: G('No sirvió de nada, pero te convertiste en mártir gay porque un estudiante de Comu te grabó.',
                               'No sirvió de nada, pero te convertiste en mártir gay porque un estudiante de Comu te grabó.',
                               'No sirvió de nada, pero te convertiste en mártir gay porque un estudiante de Comu te grabó.'),
-          stats: { fama: 11, conocimiento: 8, politica: 10 } },
+          stats: { fama: 11, conocimiento: 9, politica: 10 } },
       ]},
       { texto: T('Vas a estudiar para el parcial de Nocera. Todavía te faltan 22 autores.'), efectos: [
         { peso: 100, texto: G('No llegaste a estudiar todo y encima sos cagón.',
@@ -640,7 +644,7 @@ const eventos = [
         { peso: 100, texto: T('Hacés tu propio fanzine y tus artículos generan controversia por el nivel de delirio: proponés arancelar los baños, poner molinetes en la biblioteca y suspender el buffet. Ahora las agrupaciones te dicen lumpen.'), stats: { politica: 12, fama: -8 } },
       ]},
       { texto: T('"Ser apadrinado por un profesor reconocido."'), efectos: [
-        { peso: 100, texto: T('Te quedás charlando al final de las clases, te sumás al grupo de estudios y escribís un par de artículos.'), stats: { conocimiento: 15, fama: -8 } },
+        { peso: 100, texto: T('Te quedás charlando al final de las clases, te sumás al grupo de estudios y escribís un par de artículos.'), stats: { conocimiento: 17, fama: -8 } },
       ]},
     ],
   },
@@ -651,11 +655,11 @@ const eventos = [
     texto: T('Vas a una asamblea. Escuchás lo que dicen pero nada te convence del todo.'),
     respuestas: [
       { texto: T('Sí, me anoto.'), gesto: 'der', efectos: [
-        { peso: 50, texto: T('La rompiste toda. Te aplaudieron de pie y saliste con tres propuestas aprobadas.'), stats: { fama: 11, politica: 14, guita: -5 } },
+        { peso: 50, texto: T('La rompiste toda. Te aplaudieron de pie y saliste con tres propuestas aprobadas.'), stats: { fama: 11, politica: 14, guita: -4 } },
         { peso: 50, texto: T('Dijiste cualquier cosa y encima te rascaste la verga delante de todos sin darte cuenta. Los memes van a quedar para la posteridad. Te defendés diciendo que es IA.'), stats: { fama: 13, politica: -9, conocimiento: -8 } },
       ]},
       { texto: T('No, dejar pasar.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('Te fuiste temprano y llegaste a hacer las compras.'), stats: { guita: 8, politica: -7, conocimiento: -5, fama: -5 } },
+        { peso: 100, texto: T('Te fuiste temprano y llegaste a hacer las compras.'), stats: { guita: 11, politica: -7, conocimiento: -5, fama: -5 } },
       ]},
     ],
   },
@@ -669,16 +673,16 @@ const eventos = [
     texto: T('Te invitan a militar en diferentes agrupaciones.'),
     respuestas: [
       { texto: T('Variante Universitaria.'), efectos: [
-        { peso: 100, texto: T('Reuniones los martes y una caja de resistencia que funciona sorprendentemente bien.'), stats: { politica: 14, guita: 10 } },
+        { peso: 100, texto: T('Reuniones los martes y una caja de resistencia que funciona sorprendentemente bien.'), stats: { politica: 14, guita: 14 } },
       ]},
       { texto: T('La UElla.'), efectos: [
         { peso: 100, texto: T('Mucha calle, mucho megáfono y una cuenta de Instagram que crece rápido.'), stats: { politica: 14, fama: 9 } },
       ]},
       { texto: T('F.O.S.: Fulbito de los Obreros Sindicalistas.'), efectos: [
-        { peso: 100, texto: T('Se juega los domingos y se lee a Gramsci los miércoles. No sobra un peso.'), stats: { politica: 14, conocimiento: 10, guita: -8 } },
+        { peso: 100, texto: T('Se juega los domingos y se lee a Gramsci los miércoles. No sobra un peso.'), stats: { politica: 14, conocimiento: 11, guita: -7 } },
       ]},
       { texto: T('No curtís ese mambo. Sos un intelectual de libre pensamiento.'), efectos: [
-        { peso: 100, texto: T('Te movés tranqui piola sin berre. Nadie te va a buscar para nada.'), stats: { politica: -9, fama: -8, guita: 8 } },
+        { peso: 100, texto: T('Te movés tranqui piola sin berre. Nadie te va a buscar para nada.'), stats: { politica: -9, fama: -8, guita: 11 } },
       ]},
     ],
   },
@@ -689,8 +693,8 @@ const eventos = [
     texto: T('Un facuamigo te invita a participar de la olla popular que él lidera los jueves. Hizo mal el cálculo y faltan fideos.'),
     respuestas: [
       { texto: T('Lo salís a bancar y cubrís el costo a medias. Es por una buena causa.'), efectos: [
-        { peso: 70, texto: T('Te quedaste sin plata para cargar la SUBE y tuviste que saltar el molinete y correr. Quedaste como el héroe de la gente y de tu amigo.'), stats: { guita: -12, fama: 11 } },
-        { peso: 30, texto: T('Caíste detenido y saliste en un spot publicitario de las fuerzas de seguridad.'), stats: { guita: -15, fama: -12, politica: 6 } },
+        { peso: 70, texto: T('Te quedaste sin plata para cargar la SUBE y tuviste que saltar el molinete y correr. Quedaste como el héroe de la gente y de tu amigo.'), stats: { guita: -10, fama: 11 } },
+        { peso: 30, texto: T('Caíste detenido y saliste en un spot publicitario de las fuerzas de seguridad.'), stats: { guita: -13, fama: -12, politica: 6 } },
       ]},
       { texto: T('Donde comen dos comen tres. Proponés repartir porciones más chicas.'), efectos: [
         { peso: 100, texto: T('Comieron todos. Nadie se fue con hambre y nadie puso un peso de más.'), stats: { politica: 14 } },
@@ -713,7 +717,7 @@ const eventos = [
           stats: { politica: 18, fama: 9 } },
       ]},
       { texto: T('Entrás y te miran.'), gesto: 'izq', efectos: [
-        { peso: 100, texto: T('"Vamos mitad y mitad y acá no pasó nada, muchachos." Te llenás los bolsillos, Carrió te convida un pucho, el Guillote te palmea la espalda y Lilia te invita un clona. Todos felices.'), stats: { guita: 20, politica: -11 } },
+        { peso: 100, texto: T('"Vamos mitad y mitad y acá no pasó nada, muchachos." Te llenás los bolsillos, Carrió te convida un pucho, el Guillote te palmea la espalda y Lilia te invita un clona. Todos felices.'), stats: { guita: 27, politica: -11 } },
       ]},
     ],
   },
@@ -724,7 +728,7 @@ const eventos = [
     texto: T('Época de elecciones. Llegás a la facultad y ves un ejército de militantes listos para implorarte por tu voto.'),
     respuestas: [
       { texto: T('Les decís a todos que ya votaste.'), efectos: [
-        { peso: 100, texto: T('Llegaste temprano a clase por primera vez en el cuatrimestre.'), stats: { conocimiento: 10, politica: -7 } },
+        { peso: 100, texto: T('Llegaste temprano a clase por primera vez en el cuatrimestre.'), stats: { conocimiento: 11, politica: -7 } },
       ]},
       { texto: T('Te quedás escuchando a cada uno.'), efectos: [
         { peso: 100, texto: T('Llegaste tarde a la cursada y te dolía la cabeza, pero ahora te conocen todos los apellidos.'), stats: { conocimiento: -8, politica: 14 } },
@@ -747,7 +751,7 @@ const eventos = [
         { peso: 100, texto: T('Acá es donde empieza el cambio del mundo. Esos dispensers de agua no se van a poner solos.'), stats: { politica: 14 } },
       ]},
       { texto: T('Te hacés el NPC y asentís con la cabeza.'), efectos: [
-        { peso: 100, texto: T('En realidad estabas soñando con acariciarle la pelada a Foucault.'), stats: { politica: -7, conocimiento: 5 } },
+        { peso: 100, texto: T('En realidad estabas soñando con acariciarle la pelada a Foucault.'), stats: { politica: -7, conocimiento: 6 } },
       ]},
       { texto: T('Hacés notar tu molestia. Alto apático.'), efectos: [
         { peso: 100, texto: T('Una agrupación se enojó y sacó un reel: "Denunciamos un nuevo ataque fascista...".'), stats: { politica: -9, fama: -8 } },
@@ -769,7 +773,7 @@ const eventos = [
           stats: { politica: 18, conocimiento: -10, fama: 9 } },
       ]},
       { texto: T('No comprás ni ahí.'), efectos: [
-        { peso: 100, texto: T('Te fuiste a la biblioteca y aprovechaste las dos horas.'), stats: { fama: -8, politica: -7, conocimiento: 10 } },
+        { peso: 100, texto: T('Te fuiste a la biblioteca y aprovechaste las dos horas.'), stats: { fama: -8, politica: -7, conocimiento: 11 } },
       ]},
       { texto: T('Accedés a hacer las pasadas.'), efectos: [
         { peso: 100, texto: T('A la tercera pasada te confiesa que le chupa un huevo. Pela un porro y van a la plaza seca a escuchar a Los Redondos. Te revela que en realidad era Duki Green Son.'), stats: { fama: 11, politica: 6, conocimiento: -5 } },
@@ -811,7 +815,7 @@ const eventos = [
     texto: T('El grupo de investigación al que te sumaron presentó un proyecto y te pusieron como colaborador. Salió publicado con tu apellido.'),
     respuestas: [
       { texto: T('Mandárselo a tu vieja'), efectos: [
-        { peso: 100, texto: T('Lo imprimió y lo puso en la heladera, al lado de las facturas.'), stats: { conocimiento: 12, fama: 7, politica: 6 } },
+        { peso: 100, texto: T('Lo imprimió y lo puso en la heladera, al lado de las facturas.'), stats: { conocimiento: 13, fama: 7, politica: 6 } },
       ]},
     ],
   },
@@ -866,8 +870,8 @@ const minijuegos = [
     // Los símbolos son códigos de RETRATOS en public/ilustraciones.js
     config: { pares: 4, columnas: 4, simbolos: ['belgrano', 'sarmiento', 'che', 'evita'] },
     resultados: [
-      { codigo: 'exito',   min: 80, max: 100, texto: T('Te acordás hasta de los apellidos con tilde.'), stats: { conocimiento: 14 } },
-      { codigo: 'parcial', min: 40, max: 79,  texto: T('La mitad te quedó.'),                           stats: { conocimiento: 6 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Te acordás hasta de los apellidos con tilde.'), stats: { conocimiento: 15 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('La mitad te quedó.'),                           stats: { conocimiento: 7 } },
       { codigo: 'fallo',   min: 0,  max: 39,  texto: T('En blanco total.'),                             stats: { conocimiento: -5 } },
     ],
   },
@@ -916,8 +920,8 @@ const minijuegos = [
       ],
     },
     resultados: [
-      { codigo: 'exito',   min: 80, max: 100, texto: T('Lo leíste en el original y encima entendiste.'), stats: { conocimiento: 14, fama: 4 } },
-      { codigo: 'parcial', min: 40, max: 79,  texto: T('Media traducción y mucho contexto inventado.'),  stats: { conocimiento: 6 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Lo leíste en el original y encima entendiste.'), stats: { conocimiento: 15, fama: 4 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Media traducción y mucho contexto inventado.'),  stats: { conocimiento: 7 } },
       { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Lo pasaste por el traductor y quedó peor.'),     stats: { conocimiento: -5, fama: -3 } },
     ],
   },
@@ -949,8 +953,8 @@ const minijuegos = [
       ],
     },
     resultados: [
-      { codigo: 'exito',   min: 80, max: 100, texto: T('Las tres al hilo. Ojo clínico.'),          stats: { conocimiento: 12, fama: 4 } },
-      { codigo: 'parcial', min: 40, max: 79,  texto: T('Encontraste alguna y te cansaste.'),       stats: { conocimiento: 5 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Las tres al hilo. Ojo clínico.'),          stats: { conocimiento: 13, fama: 4 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Encontraste alguna y te cansaste.'),       stats: { conocimiento: 6 } },
       { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Miraste la hoja veinte minutos sin ver.'), stats: { conocimiento: -4 } },
     ],
   },
@@ -1017,8 +1021,8 @@ const minijuegos = [
       ],
     },
     resultados: [
-      { codigo: 'exito',   min: 70, max: 100, texto: T('Entregaste con tiempo de sobra.'),       stats: { conocimiento: 12, fama: 4 } },
-      { codigo: 'parcial', min: 35, max: 69,  texto: T('Aprobaste raspando.'),                   stats: { conocimiento: 5 } },
+      { codigo: 'exito',   min: 70, max: 100, texto: T('Entregaste con tiempo de sobra.'),       stats: { conocimiento: 13, fama: 4 } },
+      { codigo: 'parcial', min: 35, max: 69,  texto: T('Aprobaste raspando.'),                   stats: { conocimiento: 6 } },
       { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Se te acabó el tiempo con media hoja.'), stats: { conocimiento: -4, fama: -3 } },
     ],
   },
@@ -1064,8 +1068,8 @@ const minijuegos = [
       ],
     },
     resultados: [
-      { codigo: 'exito',   min: 80, max: 100, texto: T('Ni una falta de ortografía. El titular te miró distinto.'), stats: { conocimiento: 16, fama: 5 } },
-      { codigo: 'parcial', min: 40, max: 79,  texto: T('Escribiste "Durkeim" y nadie te dijo nada.'),               stats: { conocimiento: 6 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Ni una falta de ortografía. El titular te miró distinto.'), stats: { conocimiento: 18, fama: 5 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Escribiste "Durkeim" y nadie te dijo nada.'),               stats: { conocimiento: 7 } },
       { codigo: 'fallo',   min: 0,  max: 39,  texto: T('"Bordié". Se rió toda la comisión.'),                       stats: { conocimiento: -6, fama: -5 } },
     ],
   },
@@ -1078,8 +1082,8 @@ const minijuegos = [
     fases: ['ingresante', 'intermedio', 'avanzado'],
     config: { puntos: 9 },
     resultados: [
-      { codigo: 'exito',   min: 80, max: 100, texto: T('Quedó un mapa que hasta la cátedra te copió.'), stats: { conocimiento: 12, fama: 5 } },
-      { codigo: 'parcial', min: 40, max: 79,  texto: T('Se entiende si lo explicás vos al lado.'),      stats: { conocimiento: 5 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Quedó un mapa que hasta la cátedra te copió.'), stats: { conocimiento: 13, fama: 5 } },
+      { codigo: 'parcial', min: 40, max: 79,  texto: T('Se entiende si lo explicás vos al lado.'),      stats: { conocimiento: 6 } },
       { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Parece una telaraña dibujada con el codo.'),    stats: { conocimiento: -4, fama: -3 } },
     ],
   },
@@ -1092,9 +1096,9 @@ const minijuegos = [
     fases: ['ingresante', 'intermedio', 'avanzado'],
     config: { obstaculos: 10, velocidad: 4.6 },
     resultados: [
-      { codigo: 'exito',   min: 70, max: 100, texto: T('Pasaste los diez sin que te vieran. Llegaste con la SUBE intacta.'), stats: { guita: 16, fama: 5 } },
-      { codigo: 'parcial', min: 35, max: 69,  texto: T('Te llevaste uno por delante pero seguiste igual.'),                  stats: { guita: 7, fama: -2 } },
-      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Te agarró seguridad en el primer molinete.'),                        stats: { guita: -8, fama: -5 } },
+      { codigo: 'exito',   min: 70, max: 100, texto: T('Pasaste los diez sin que te vieran. Llegaste con la SUBE intacta.'), stats: { guita: 22, fama: 5 } },
+      { codigo: 'parcial', min: 35, max: 69,  texto: T('Te llevaste uno por delante pero seguiste igual.'),                  stats: { guita: 9, fama: -2 } },
+      { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Te agarró seguridad en el primer molinete.'),                        stats: { guita: -7, fama: -5 } },
     ],
   },
 ];

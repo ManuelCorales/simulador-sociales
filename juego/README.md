@@ -120,12 +120,12 @@ http://localhost:3000/?dev                     abre el panel
 http://localhost:3000/?evento=gen_plaza_seca   salta a esa carta
 http://localhost:3000/?minijuego=molinete      salta a ese minijuego (código o mecánica)
 http://localhost:3000/?final=fin_secreto       salta a ese final
-http://localhost:3000/?ronda=14                arranca en esa ronda
+http://localhost:3000/?ronda=7                 arranca en esa ronda (1 a 9)
 http://localhost:3000/?genero=f                m | f | nb
 http://localhost:3000/?stats=guita:88,fama:9   fija los stats
 ```
 
-Se combinan: `?ronda=14&stats=guita:88&evento=fam_acosador&genero=f`.
+Se combinan: `?ronda=7&stats=guita:88&evento=fam_acosador&genero=f`.
 
 Con `?dev` aparece un **panel abajo a la derecha** con la lista completa de eventos
 (agrupados por categoría), minijuegos y finales, más los cuatro stats editables y un salto
@@ -240,7 +240,7 @@ que mantienen el aire pero pierden el pixelado.
 
 Son 16 dibujos SVG de línea, monocromos, al estilo REIGNS. **Se repiten a propósito**:
 cada evento apunta a uno por su código y varios eventos comparten dibujo. En una partida
-de 16 rondas aparecen unos 11 distintos, que alcanza para que no se sienta repetitivo.
+de 9 rondas aparecen unos 7 distintos, que alcanza para que no se sienta repetitivo.
 
 ```
 profesor  estudiante  multitud  plaza     bondi   libro   plata   camara
@@ -338,7 +338,12 @@ Está en `exportarImagen()` / `construirPlaca()` en `public/app.js`.
 
 ## Cómo funciona una partida
 
-16 rondas. En cada una el motor arma la **bolsa** y elige con este orden de precedencia:
+**12 cartas: 9 eventos y 3 minijuegos.** Los stats arrancan al azar entre 15 y 45 (rango
+en `configuracion`, claves `stats_iniciales_min` / `stats_iniciales_max`), así que cada
+partida empieza con un perfil distinto. `violencia` arranca siempre en 0, porque el secret
+ending mide escalada, no punto de partida.
+
+En cada ronda el motor arma la **bolsa** y elige con este orden de precedencia:
 
 1. **Aviso vencido** — si un efecto pasado programó un aviso y ya se cumplió la demora, se muestra sí o sí.
 2. **Evento de abandono** — el único evento que corta la carrera. Aparece solo si `guita ≤ 8` o `conocimiento ≤ 12`, de la ronda 6 en adelante.
@@ -346,7 +351,9 @@ Está en `exportarImagen()` / `construirPlaca()` en `public/app.js`.
 4. **Sorteo ponderado** — todos los eventos que pasan sus condiciones compiten por su peso intrínseco. Las historias diferidas que ya superaron su `gap_max` entran con peso x4.
 
 Los **minijuegos no consumen ronda**: se intercalan después de la ronda indicada en
-`fase.minijuego_despues_de` (3, 9 y 14). Se sortean 3 de los 7 al empezar, uno por fase.
+`fase.minijuego_despues_de` (2, 5 y 8). Se sortean 3 de los 8 al empezar, uno por fase.
+Caen antes del cierre de cada fase para que la última carta de la partida sea siempre un
+evento: la decisión final la toma el jugador, no la resuelve su puntería.
 
 Los **avisos sí consumen ronda** y tienen exactamente una respuesta.
 
@@ -388,7 +395,7 @@ Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a 
 | | |
 |---|---|
 | Stats | guita, conocimiento, fama, política — más `violencia`, **oculto**, que alimenta el secret ending |
-| Fases | ingresante (1-5), intermedio (6-11), avanzado (12-16) |
+| Fases | ingresante (1-3), intermedio (4-6), avanzado (7-9) — 3 eventos cada una |
 | Eventos | 42 → 38 del documento + 4 avisos |
 | Categorías | generales 12, guita 9, fama 6, política 6, conocimiento 5 |
 | Respuestas | 102 (entre 1 y 4 por evento) |
@@ -401,38 +408,50 @@ Transcripción del documento **"SimuladorSociales. Juego de Rol. De aspirante a 
 Distribución medida sobre 8000 partidas con elecciones al azar:
 
 ```
-fin_secreto      14.4%   fin_consultora     4.2%
-fin_abandono     12.9%   fin_influencer     3.7%
-fin_conocimiento 12.6%   fin_panelista      2.9%
-fin_guita        11.3%   fin_default        2.8%
-fin_fama          9.3%   fin_lobista        2.8%
-fin_politica      8.6%   fin_fantasma       1.9%
-fin_menem         5.5%   fin_sin_guita      0.9%
-fin_tecnocrata    4.3%   fin_sin_politica   0.7%
-                         fin_sin_fama       0.6%
-                         fin_sin_conocimiento 0.6%
+fin_conocimiento 15.8%   fin_tecnocrata     4.2%
+fin_guita        14.9%   fin_panelista      3.5%
+fin_politica     10.9%   fin_influencer     3.5%
+fin_fama         10.3%   fin_lobista        3.3%
+fin_secreto       7.6%   fin_fantasma       3.1%
+fin_menem         6.4%   fin_sin_guita      1.1%
+fin_consultora    4.4%   fin_sin_conocimiento 0.9%
+fin_default       4.4%   fin_sin_fama       0.8%
+fin_abandono      4.2%   fin_sin_politica   0.5%
 ```
 
-Los cuatro tríos salen menos del 1% cada uno **a propósito**: piden que ningún stat se
+Los cuatro tríos salen alrededor del 1% cada uno **a propósito**: piden que ningún stat se
 despegue y que uno solo se quede atrás, que es una partida rara. Son los finales de
 colección. Si querés que aparezcan más seguido, subí `BAJO` en `db/contenido.js` (de 19
 a 21-22); el que baja a cambio es `fin_default`.
 
-Ojo con dos números: jugando al azar el abandono sale 12,9% (es una de tres respuestas en
-su evento) y el secret ending 14,4%. Con decisiones deliberadas ambos bajan bastante, pero
-son los primeros umbrales a tocar si querés que sean más raros.
-
 ### Balance de los cuatro stats
 
-Los finales de forma solo funcionan si los cuatro stats pesan parecido al terminar. Medido
-sobre 3000 partidas al azar, política llegaba a 34 contra 54 de fama: aparecía en menos
-respuestas (59 contra 74) y con neto más chico (+116 contra +200). Eso hacía que los cuatro
-finales con política sumaran apenas el 9,7%.
+Los finales de forma solo funcionan si los cuatro stats pesan parecido al terminar, y el
+balance hubo que rehacerlo dos veces porque cambió el juego debajo.
 
-El ajuste fue sobre los efectos, no sobre los umbrales: los positivos de política ×1,2, los
-negativos ×0,9 y los positivos de fama ×0,88. Los valores iniciales quedaron intactos.
-Resultado: guita 46,7 · conocimiento 45,6 · fama 47,7 · política 44,8, y los finales con
-política pasaron de 9,7% a 20,4%.
+**Primera vuelta (16 rondas, arranque fijo).** Política llegaba a 34 contra 54 de fama:
+aparecía en menos respuestas (59 contra 74) y con neto más chico (+116 contra +200). Los
+cuatro finales con política sumaban apenas el 9,7%. Se ajustó sobre los efectos, no sobre
+los umbrales: positivos de política x1,2, negativos x0,9 y positivos de fama x0,88.
+
+**Segunda vuelta (9 rondas, arranque al azar).** Al sortear los cuatro stats en el mismo
+rango, guita perdió la ventaja que le daba empezar en 40 y quedó en 34 contra 45 de fama.
+Se corrigió con positivos de guita x1,35, negativos x0,85 y positivos de conocimiento x1,1.
+
+Resultado medido sobre 4000 partidas: guita 43,5 · conocimiento 44,3 · fama 44,9 ·
+política 43,7. Los cuatro entran en 1,5 puntos.
+
+**Si volvés a tocar la duración o el rango del sorteo, hay que rehacer esto.** Con menos
+cartas el arranque pesa más y cualquier asimetría en los valores iniciales se traslada
+directo al final. El procedimiento está en el historial: escalar los efectos de un stat
+por un factor, sembrar, simular unas miles de partidas y mirar la brecha entre el mayor y
+el menor promedio.
+
+**Efecto secundario del recorte a 9 rondas:** los avisos aparecen en 0,21 partidas de cada
+una, contra ~0,35 antes. Solo cuatro respuestas de 102 los programan, y ahora se sortean 9
+eventos en vez de 16, así que hay menos oportunidades de pisar una. Sus demoras se
+acortaron (de 2-6 rondas a 1-3) porque si no, el aviso quedaba programado para una ronda
+que ya no existe y no se disparaba nunca.
 
 ## Editar contenido
 

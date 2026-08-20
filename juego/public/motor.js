@@ -74,9 +74,24 @@ function crearMotor(C) {
     return elegidos;
   }
 
-  function crearPartida({ nombre, genero, extra = {} }) {
+  // Los cuatro stats visibles arrancan al azar dentro del rango de config, así
+  // que cada partida empieza con un perfil distinto. Los ocultos —violencia y
+  // los derivados del reparto— arrancan siempre en su valor fijo: violencia
+  // tiene que empezar en 0 para que el secret ending mida escalada real, y los
+  // derivados los pisa el motor antes de elegir el final.
+  function statsIniciales() {
+    const min = Number(C.config.stats_iniciales_min ?? 15);
+    const max = Number(C.config.stats_iniciales_max ?? 45);
     const stats = {};
-    C.stats.forEach((s) => { stats[s.codigo] = s.valor_inicial; });
+    C.stats.forEach((s) => {
+      if (!s.visible) { stats[s.codigo] = s.valor_inicial; return; }
+      stats[s.codigo] = Math.max(s.valor_min, Math.min(s.valor_max, entero(min, max)));
+    });
+    return stats;
+  }
+
+  function crearPartida({ nombre, genero, extra = {} }) {
+    const stats = statsIniciales();
 
     const estado = {
       id: 'p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
