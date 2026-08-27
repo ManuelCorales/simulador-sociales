@@ -277,6 +277,7 @@ entre los ocho — ninguno se repite dentro de la misma partida.
 | `apellidos` | Escribir bien los apellidos | Se muestra «Bordié», hay que escribir Bourdieu | aciertos / 4 |
 | `conectar` | El mapa conceptual | Unir 9 puntos en orden | 100 menos 14 por error |
 | `molinete` | Saltar el molinete | Corredor tipo dino: clic o barra para saltar | molinetes pasados / 10 |
+| `simon` | Duelo de baile | Simon Dice: repetí la secuencia, un paso más por ronda hasta seis | completar los seis = 100; si te trabás, rondas hechas / 6 |
 
 En el memo test el tope de 5 se cuenta en **fallos**, no en jugadas: con 6 pares hacen
 falta 6 jugadas para ganar aunque tengas memoria perfecta, así que un tope de 5 jugadas
@@ -375,6 +376,23 @@ En cada ronda el motor arma la **bolsa** y elige con este orden de precedencia:
 
 Los **minijuegos no consumen ronda**: se intercalan después de la ronda indicada en
 `fase.minijuego_despues_de` (1, 3 y 5). Se sortean 3 de los 8 al empezar, uno por fase.
+
+### Duelos: una respuesta que lanza un minijuego
+
+Una respuesta puede tener `minijuego: 'mj_simon'`. Elegirla no resuelve nada: lanza ese
+minijuego y **el resultado decide cuál de los efectos se aplica**, entre los marcados
+`rama: 'gana'` y los marcados `rama: 'pierde'`. El corte lo pone `umbralDuelo` en la
+config del minijuego.
+
+Hoy lo usa un solo evento: el duelo de baile contra el falso Michael Jackson, que se juega
+con Simon Dice y pide los seis pasos completos para ganar. Sale en el 5% de las partidas.
+
+`mj_simon` tiene `fases: []`, así que **no entra en el sorteo de los minijuegos por fase**:
+solo lo lanza la respuesta que lo declara.
+
+En el esquema son dos columnas: `respuesta.minijuego_id` y `efecto.rama_minijuego`. En el
+motor, `responder()` devuelve una pantalla de minijuego en vez de un resultado, y
+`resolverMinijuego()` elige la rama y sigue con el flujo normal de una respuesta.
 
 Con los avisos en 2 y 4, las once cartas se alternan solas:
 

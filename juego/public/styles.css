@@ -793,7 +793,31 @@ body.dev-activo #app { padding-top: 30px; }
 /* Las grillas de sopa (10x10), crucigrama (hasta 8 columnas) y memo test
    (4 columnas de 80px con borde = 344px) no entran en pantallas angostas con
    el tamaño de celda de escritorio. */
+/* --- Simon Dice: duelo de baile --------------------------------------
+   Cuatro pads grandes. El pad encendido sube el brillo y crece un poco,
+   que a este tamaño se lee mejor que un cambio de color. */
+.simon {
+  display: grid;
+  grid-template-columns: repeat(2, 116px);
+  gap: 10px;
+  justify-content: center;
+}
+.simon-pad {
+  width: 116px; height: 116px;
+  border: 4px solid var(--negro);
+  padding: 0;
+  cursor: pointer;
+  filter: brightness(.62) saturate(.75);
+  transition: filter .08s linear, transform .08s linear;
+}
+.simon-pad.on {
+  filter: brightness(1.25) saturate(1.1);
+  transform: scale(1.04);
+}
+
 @media (max-width: 480px) {
+  .simon { grid-template-columns: repeat(2, 92px); }
+  .simon-pad { width: 92px; height: 92px; }
   .sopa-c { width: 28px; height: 28px; font-size: 9px; }
   .cruci-c, .cruci-x { width: 29px; height: 29px; }
   .cruci-c { font-size: 11px; }

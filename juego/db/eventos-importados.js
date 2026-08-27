@@ -223,9 +223,9 @@ const eventosImportados = [
         { peso: 50, texto: T('Tus compañeros no te pueden sacar de encima de Michael, se tuvo que meter la policía incluso. Otra denuncia más a la lista.'), stats: { guita: -12, violencia: 20 } },
         { peso: 50, texto: T('No era un tipo vestido de Michael: era el verdadero Michael Jackson, que había venido a la Argentina en secreto. En los ojos del mundo quedás como un hijo de puta, peor que Chapman.'), stats: { fama: -22, politica: -22, violencia: 20 } },
       ]},
-      { texto: T('Lo retás a una competencia de baile.'), efectos: [
-        { peso: 100, texto: T('La facultad entera salió a ver este evento histórico. Le rompiste el ojete con la caminata lunar, el falso Michael se escapa furioso y ahora personas que no conocés te llaman "El Michael".'), stats: { fama: 22 } },
-        { peso: 100, texto: T('Quedaste como un boludo. Hasta el profesor pelado que siempre tiene cara de culo se rió de lo mal que bailaste. Has cometido suicidio social.'), stats: { fama: -35 } },
+      { texto: T('Lo retás a una competencia de baile.'), minijuego: 'mj_simon', efectos: [
+        { peso: 100, rama: 'gana', texto: T('La facultad entera salió a ver este evento histórico. Le rompiste el ojete con la caminata lunar, el falso Michael se escapa furioso y ahora personas que no conocés te llaman "El Michael".'), stats: { fama: 22 } },
+        { peso: 100, rama: 'pierde', texto: T('Quedaste como un boludo. Hasta el profesor pelado que siempre tiene cara de culo se rió de lo mal que bailaste. Has cometido suicidio social.'), stats: { fama: -35 } },
       ]},
     ],
   },

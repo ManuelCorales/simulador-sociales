@@ -12,7 +12,7 @@ const errores = [];
 const conteoFinales = {};
 const conteoEventos = {};
 const conteoMinijuegos = {};
-let abandonos = 0, cortadas = 0, avisosMostrados = 0, rondasTotales = 0;
+let abandonos = 0, cortadas = 0, duelos = 0, avisosMostrados = 0, rondasTotales = 0;
 let maxRondas = 0, minRondas = 99;
 
 function check(cond, msg) { if (!cond) errores.push(msg); }
@@ -29,6 +29,7 @@ for (let i = 0; i < N; i++) {
   let avisosDeEstaPartida = 0;
   const titulosRespondidos = new Set();
   let minijuegosJugados = 0;
+  let duelosDeEstaPartida = 0;
   let ultimaRonda = 0;
 
   while (!estado.terminada && pasos < 200) {
@@ -75,7 +76,19 @@ for (let i = 0; i < N; i++) {
     }
 
     const elegida = pantalla.respuestas[Math.floor(Math.random() * pantalla.respuestas.length)];
-    const res = motor.responder(estado, elegida.id);
+    let res = motor.responder(estado, elegida.id);
+
+    // Duelo: la respuesta lanzó un minijuego y todavía no resolvió nada.
+    if (res.tipo === 'minijuego') {
+      duelos++; duelosDeEstaPartida++;
+      check(!!estado.duelo, 'responder devolvió un minijuego sin abrir el duelo');
+      check(!!res.minijuego.mecanica, 'el duelo no dice qué mecánica usar');
+      minijuegosJugados++;
+      conteoMinijuegos[res.minijuego.codigo] = (conteoMinijuegos[res.minijuego.codigo] ?? 0) + 1;
+      res = motor.resolverMinijuego(estado, Math.random() * 100);
+      check(!estado.duelo, 'el duelo quedó abierto después de resolverlo');
+      check(typeof res.gano === 'boolean', 'el duelo no dice si se ganó');
+    }
     check(res.tipo === 'resultado', 'responder no devolvió resultado');
   }
 
@@ -101,9 +114,11 @@ for (let i = 0; i < N; i++) {
   }
   avisosMostrados += avisosDeEstaPartida;
 
-  check(minijuegosJugados <= 3, `Se jugaron ${minijuegosJugados} minijuegos`);
+  // Los 3 de fase, mas los duelos que hayan salido.
+  check(minijuegosJugados <= 3 + duelosDeEstaPartida,
+    `Se jugaron ${minijuegosJugados} minijuegos`);
   if (!estado.cortada) {
-    check(minijuegosJugados === 3, `Partida completa con ${minijuegosJugados} minijuegos (esperado 3)`);
+    check(minijuegosJugados === 3 + duelosDeEstaPartida, `Partida completa con ${minijuegosJugados} minijuegos (esperado 3)`);
   }
 
   // Los stats nunca salen de sus límites cuando clampea = 1
@@ -137,6 +152,7 @@ console.log(`\n=== ${N} partidas simuladas ===`);
 console.log(`Rondas por partida: min ${minRondas} / max ${maxRondas} / prom ${(rondasTotales / N).toFixed(2)}`);
 console.log(`Abandonos: ${abandonos} (${pct(abandonos)})`);
 console.log(`Partidas cortadas antes de la ultima ronda: ${cortadas} (${pct(cortadas)})`);
+console.log(`Duelos jugados: ${duelos} (${pct(duelos)})`);
 console.log(`Avisos mostrados: ${avisosMostrados} (${(avisosMostrados / N).toFixed(2)} por partida)`);
 
 console.log('\nFinales:');

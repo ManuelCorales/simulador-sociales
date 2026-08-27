@@ -126,6 +126,7 @@ function crearMotor(C) {
       terminada: false,
       abandono: false,
       cortada: false,   // termino antes de la ultima ronda
+      duelo: null,      // { eventoId, respuestaId, minijuegoId } mientras se juega
       finalId: null,
       creada: Date.now(),
     };
@@ -397,6 +398,30 @@ function crearMotor(C) {
     return Object.fromEntries(Object.entries(deltas).filter(([cod]) => !OCULTOS.has(cod)));
   }
 
+  // El minijuego que lanza una respuesta usa la misma pantalla que el de fase:
+  // para el front es el mismo tipo de carta.
+  function datosMinijuego(mj, estado) {
+    return {
+      id: mj.id, codigo: mj.codigo, nombre: mj.nombre, mecanica: mj.mecanica,
+      descripcion: mj.descripcion, ilustracion: mj.ilustracion,
+      instrucciones: tx(mj, 'instrucciones', estado.genero),
+      config: JSON.parse(mj.config || '{}'),
+    };
+  }
+
+  function pantallaDuelo(estado) {
+    const mj = C.minijuegosPorId[estado.duelo.minijuegoId];
+    const fase = faseDeRonda(estado.ronda);
+    return {
+      tipo: 'minijuego',
+      duelo: true,
+      ronda: estado.ronda, totalRondas: TOTAL_RONDAS,
+      fase: { codigo: fase.codigo, nombre: fase.nombre },
+      stats: statsPublicos(estado),
+      minijuego: datosMinijuego(mj, estado),
+    };
+  }
+
   function pantallaMinijuego(estado, faseId) {
     const mj = C.minijuegosPorId[estado.minijuegos[faseId]];
     const fase = C.fases.find((f) => f.id === faseId);
@@ -491,9 +516,39 @@ function crearMotor(C) {
     return pool[0];
   }
 
+  // Termina el duelo: el puntaje elige la rama y de ahí sigue el flujo normal
+  // de una respuesta. Si el evento no cargó efectos para la rama que salió, se
+  // cae a los que no declaran rama en vez de romper la partida.
+  function resolverDuelo(estado, puntaje) {
+    const { eventoId, respuestaId, minijuegoId } = estado.duelo;
+    const ev = C.eventosPorId[eventoId];
+    const resp = (C.respuestasPorEvento[eventoId] ?? []).find((r) => r.id === respuestaId);
+    const mj = C.minijuegosPorId[minijuegoId];
+
+    const p = Math.max(0, Math.min(100, Number(puntaje) || 0));
+    const umbral = Number(JSON.parse(mj.config || '{}').umbralDuelo ?? 60);
+    const rama = p >= umbral ? 'gana' : 'pierde';
+
+    const todos = C.efectosPorRespuesta[respuestaId] ?? [];
+    let efectos = todos.filter((e) => e.rama_minijuego === rama);
+    if (!efectos.length) efectos = todos.filter((e) => !e.rama_minijuego);
+    if (!efectos.length) efectos = todos;
+
+    const efecto = elegirPonderado(efectos) ?? efectos[0];
+    if (!efecto) throw new Error('El duelo no tiene efectos cargados');
+
+    estado.duelo = null;
+    const r = aplicarRespuesta(estado, ev, resp, efecto);
+    r.minijuego = true;
+    r.puntaje = Math.round(p);
+    r.gano = rama === 'gana';
+    return r;
+  }
+
   function siguiente(estado) {
     if (estado.terminada) return pantallaFinal(estado);
 
+    if (estado.duelo) return pantallaDuelo(estado);
     if (estado.pendienteMinijuego) return pantallaMinijuego(estado, estado.pendienteMinijuego);
 
     // Slot de aviso: carta extra que referencia una decisión ya tomada.
@@ -526,13 +581,19 @@ function crearMotor(C) {
 
   function responder(estado, respuestaId) {
     if (estado.terminada) return pantallaFinal(estado);
-    if (estado.pendienteMinijuego) throw new Error('Hay un minijuego pendiente');
+    if (estado.pendienteMinijuego || estado.duelo) throw new Error('Hay un minijuego pendiente');
 
     const ev = estado.eventoActual;
     if (!ev) throw new Error('No hay evento en curso');
 
     const resp = (C.respuestasPorEvento[ev.id] ?? []).find((r) => r.id === Number(respuestaId));
     if (!resp) throw new Error('Respuesta inválida para este evento');
+
+    // Duelo: esta respuesta lanza un minijuego y el resultado decide el efecto.
+    if (resp.minijuego_id) {
+      estado.duelo = { eventoId: ev.id, respuestaId: resp.id, minijuegoId: resp.minijuego_id };
+      return pantallaDuelo(estado);
+    }
 
     const todos = C.efectosPorRespuesta[resp.id] ?? [];
     // Los efectos con condiciones solo compiten si el estado las cumple.
@@ -543,6 +604,14 @@ function crearMotor(C) {
     const efecto = elegirPonderado(efectos) ?? efectos.find((e) => e.es_default);
     if (!efecto) throw new Error('La respuesta no tiene efectos cargados');
 
+    return aplicarRespuesta(estado, ev, resp, efecto);
+  }
+
+  // Todo lo que pasa una vez elegido el efecto: aplicarlo, anotarlo en la
+  // historia y decidir qué viene después. Está separado de responder() porque
+  // una respuesta con duelo elige el efecto recién cuando termina el minijuego,
+  // y de ahí en adelante el flujo es idéntico.
+  function aplicarRespuesta(estado, ev, resp, efecto) {
     const deltas = aplicarDeltas(estado, C.efectoStatsPorEfecto[efecto.id] ?? []);
     (C.efectoFlagsPorEfecto[efecto.id] ?? []).forEach((f) => { estado.flags[f.clave] = f.valor; });
     if (!estado.avisoActual) programarAvisos(estado, efecto.id, ev);
@@ -624,6 +693,8 @@ function crearMotor(C) {
   }
 
   function resolverMinijuego(estado, puntaje) {
+    if (estado.duelo) return resolverDuelo(estado, puntaje);
+
     const faseId = estado.pendienteMinijuego;
     if (!faseId) throw new Error('No hay minijuego pendiente');
 

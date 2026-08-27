@@ -141,18 +141,19 @@ C.eventos.filter((e) => e.historia).forEach((e) => {
 // Respuestas, efectos, deltas de stats, flags
 // ---------------------------------------------------------------------
 const insResp = db.prepare(`
-  INSERT INTO respuesta (evento_id, orden, texto_m, texto_f, texto_nb, gesto, muestra_hint)
-  VALUES (?,?,?,?,?,?,?)`);
+  INSERT INTO respuesta (evento_id, orden, texto_m, texto_f, texto_nb, gesto, muestra_hint, minijuego_id)
+  VALUES (?,?,?,?,?,?,?,?)`);
 const insEf = db.prepare(`
   INSERT INTO efecto (respuesta_id, peso, es_default, texto_resultado_m, texto_resultado_f,
-                      texto_resultado_nb, codigo, termina_partida, es_abandono)
-  VALUES (?,?,?,?,?,?,?,?,?)`);
+                      texto_resultado_nb, codigo, termina_partida, es_abandono, rama_minijuego)
+  VALUES (?,?,?,?,?,?,?,?,?,?)`);
 const insEfStat = db.prepare(`
   INSERT INTO efecto_stat (efecto_id, stat_id, operacion, valor, valor_min, valor_max)
   VALUES (?,?,?,?,?,?)`);
 const insEfFlag = db.prepare('INSERT INTO efecto_flag (efecto_id, clave, valor) VALUES (?,?,?)');
 
 const disparadoresPendientes = [];
+const duelosPendientes = [];
 
 // A qué aviso de familia manda un efecto, según su cambio más grande.
 // La violencia gana siempre: si escalaste, eso es lo que vuelve, no que de
@@ -178,13 +179,18 @@ C.eventos.forEach((e) => {
   const evId = idEvento[e.codigo];
   (e.respuestas ?? []).forEach((resp, i) => {
     const rid = insResp.run(evId, i + 1, resp.texto.m, resp.texto.f, resp.texto.nb,
-      resp.gesto ?? null, bool(resp.muestra_hint)).lastInsertRowid;
+      resp.gesto ?? null, bool(resp.muestra_hint), null).lastInsertRowid;
+
+    // Los minijuegos se cargan más abajo, así que el vínculo se resuelve en
+    // una segunda pasada.
+    if (resp.minijuego) duelosPendientes.push({ rid, codigo: resp.minijuego, evento: e.codigo });
 
     (resp.efectos ?? []).forEach((ef) => {
       const txt = ef.texto ?? { m: null, f: null, nb: null };
       const efId = insEf.run(rid, ef.peso ?? 100, bool(ef.es_default),
         txt.m, txt.f, txt.nb, ef.codigo ?? null,
-        bool(ef.termina_partida || ef.es_abandono), bool(ef.es_abandono)).lastInsertRowid;
+        bool(ef.termina_partida || ef.es_abandono), bool(ef.es_abandono),
+        ef.rama ?? null).lastInsertRowid;
 
       if (ef.codigo) {
         if (idEfecto[ef.codigo]) throw new Error(`Código de efecto duplicado: ${ef.codigo}`);
@@ -242,10 +248,12 @@ const insMjRes = db.prepare(`
 const insMjResStat = db.prepare(
   'INSERT INTO minijuego_resultado_stat (resultado_id, stat_id, operacion, valor) VALUES (?,?,?,?)');
 
+const idMinijuego = {};
 C.minijuegos.forEach((m) => {
   const ins = m.instrucciones ?? { m: null, f: null, nb: null };
   const mid = insMj.run(m.codigo, m.nombre, m.descripcion ?? null, m.ilustracion ?? null, m.mecanica,
     ins.m, ins.f, ins.nb, JSON.stringify(m.config ?? {}), m.peso ?? 100).lastInsertRowid;
+  idMinijuego[m.codigo] = mid;
 
   (m.fases ?? []).forEach((f) => insMjFase.run(mid, idFase[f], 100));
 
@@ -255,6 +263,17 @@ C.minijuegos.forEach((m) => {
     Object.entries(res.stats ?? {}).forEach(([cod, v]) => insMjResStat.run(rid, idStat[cod], 'sumar', v));
   });
 });
+
+// Duelos: respuestas que lanzan un minijuego. Se resuelve acá porque los
+// minijuegos se cargan después de las respuestas.
+const updDuelo = db.prepare('UPDATE respuesta SET minijuego_id = ? WHERE id = ?');
+duelosPendientes.forEach((d) => {
+  if (!idMinijuego[d.codigo]) {
+    throw new Error(`El evento ${d.evento} lanza el minijuego "${d.codigo}", que no existe`);
+  }
+  updDuelo.run(idMinijuego[d.codigo], d.rid);
+});
+
 
 // ---------------------------------------------------------------------
 // Finales

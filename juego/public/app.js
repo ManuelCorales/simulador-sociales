@@ -322,7 +322,11 @@ function responder(respuestaId) {
   if (carta.dataset.bloqueado === '1') return;
   carta.dataset.bloqueado = '1';
   try {
-    mostrarResultado(MOTOR.responder(partida, respuestaId));
+    const r = MOTOR.responder(partida, respuestaId);
+    // Una respuesta con duelo no resuelve nada: lanza el minijuego y el
+    // resultado decide el efecto.
+    if (r.tipo === 'minijuego') render(r);
+    else mostrarResultado(r);
   } catch (e) {
     console.error(e);
   } finally {
@@ -386,7 +390,7 @@ function renderMinijuego(p) {
 function terminarMinijuego(puntaje) {
   // Si una mecánica llama dos veces a `listo`, la segunda se ignora en vez
   // de tirar una excepción que dejaría la pantalla trabada.
-  if (!partida || !partida.pendienteMinijuego) return;
+  if (!partida || (!partida.pendienteMinijuego && !partida.duelo)) return;
   $('#mj-estado').textContent = `Puntaje: ${Math.round(puntaje)}`;
   const r = MOTOR.resolverMinijuego(partida, puntaje);
   $('#minijuego').classList.add('oculto');
@@ -1066,6 +1070,84 @@ const MECANICAS = {
 
     estado(`Molinetes: 0/${TOTAL}`);
     requestAnimationFrame(paso);
+  },
+  // --- 9. Simon Dice: repetir la secuencia, un paso más por ronda ---
+  simon(cfg, listo) {
+    const PASOS = cfg.pasos ?? 6;
+    // Cuatro pads con los colores de la paleta. El nombre es para el title.
+    const PADS = [
+      { color: 'var(--amarillo)', nombre: 'arriba izquierda' },
+      { color: 'var(--naranja)',  nombre: 'arriba derecha' },
+      { color: 'var(--azul-medio)', nombre: 'abajo izquierda' },
+      { color: 'var(--verde)',    nombre: 'abajo derecha' },
+    ];
+
+    // La secuencia completa se sortea una sola vez: cada ronda muestra un paso
+    // más de la MISMA secuencia, como el Simon de verdad.
+    const secuencia = Array.from({ length: PASOS }, () => Math.floor(Math.random() * 4));
+
+    const a = area();
+    a.innerHTML = '';
+    const grilla = el('div', 'simon');
+    const pads = PADS.map((p, i) => {
+      const b = el('button', 'simon-pad');
+      b.type = 'button';
+      b.style.background = p.color;
+      b.title = p.nombre;
+      b.onclick = () => tocar(i);
+      grilla.appendChild(b);
+      return b;
+    });
+    a.appendChild(grilla);
+
+    let ronda = 1, paso = 0, bloqueado = true, cerrado = false;
+    const marcador = () => estado(`Paso ${ronda} de ${PASOS}`);
+
+    const encender = (i, ms) => new Promise((r) => {
+      pads[i].classList.add('on');
+      setTimeout(() => { pads[i].classList.remove('on'); setTimeout(r, 130); }, ms);
+    });
+
+    async function mostrar() {
+      bloqueado = true;
+      estado(`Mirá... (${ronda} de ${PASOS})`);
+      await new Promise((r) => setTimeout(r, 500));
+      // Se acelera de a poco: al final hay que estar atento de verdad.
+      const ms = Math.max(240, 460 - ronda * 30);
+      for (let k = 0; k < ronda; k++) await encender(secuencia[k], ms);
+      paso = 0;
+      bloqueado = false;
+      estado(`Repetí (${ronda} de ${PASOS})`);
+    }
+
+    function cerrar(puntos, texto) {
+      if (cerrado) return;
+      cerrado = true;
+      bloqueado = true;
+      estado(texto);
+      setTimeout(() => listo(limitar(puntos)), 700);
+    }
+
+    async function tocar(i) {
+      if (bloqueado || cerrado) return;
+      pads[i].classList.add('on');
+      setTimeout(() => pads[i].classList.remove('on'), 140);
+
+      if (i !== secuencia[paso]) {
+        // Puntúa por las rondas completas: perder en el paso 5 no es lo mismo
+        // que perder en el primero.
+        return cerrar(((ronda - 1) / PASOS) * 100, `Perdiste el ritmo en el paso ${ronda}.`);
+      }
+      paso++;
+      if (paso < ronda) return;
+
+      if (ronda === PASOS) return cerrar(100, 'Los seis pasos, clavados.');
+      ronda++;
+      marcador();
+      setTimeout(mostrar, 400);
+    }
+
+    mostrar();
   },
 };
 

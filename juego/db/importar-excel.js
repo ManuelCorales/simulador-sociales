@@ -32,6 +32,17 @@ const ILUSTRACION_DEFECTO = 'facultad';
 // al 1% de los jugadores.
 const RONDA_MIN_FINAL_ANTICIPADO = 4;
 
+// La columna `especial` marca los duelos como "minijuego <algo> (si ganás)".
+// Esta tabla traduce ese <algo> al código del minijuego que se lanza.
+//
+// El Excel dice "memotest" porque así estaba en el PDF, pero el duelo de baile
+// contra el falso Michael Jackson se juega con Simon Dice: una secuencia de
+// pasos que hay que repetir, que es lo que hace un duelo de baile. El Excel no
+// se toca; la equivalencia vive acá.
+const MINIJUEGO_POR_MARCA = {
+  memotest: 'mj_simon',
+};
+
 // Fase o ronda mínima según la columna nivel del Excel.
 const NIVEL = {
   'ingresante': { fase: 'ingresante' },
@@ -238,6 +249,16 @@ function convertir(filas) {
     }
 
     const especial = String(dato(f, 'especial') || '').trim().toLowerCase();
+
+    // Duelo: la respuesta lanza un minijuego y cada efecto es una rama.
+    const marca = especial.match(/minijuego\s+([a-záéíóúñ]+)/);
+    if (marca) {
+      const codigo = MINIJUEGO_POR_MARCA[marca[1]];
+      if (!codigo) throw new Error(`No sé qué minijuego es "${marca[1]}" (fila de ${id}).`);
+      ev.respuestas.get(nr).minijuego = codigo;
+    }
+    const rama = especial.includes('si gan') ? 'gana'
+               : especial.includes('si perd') ? 'pierde' : null;
     const stats = {};
     for (const k of ['guita', 'conocimiento', 'fama', 'politica']) {
       const v = dato(f, k);
@@ -253,6 +274,7 @@ function convertir(filas) {
       stats,
       termina_partida: especial.includes('termina partida') || especial.includes('salida de carrera'),
       es_abandono: especial.includes('salida de carrera'),
+      rama,
       especial,
       notas: String(dato(f, 'notas') || '').trim(),
     });
@@ -301,9 +323,11 @@ function generar(eventos) {
     L.push(`    notas_autor: '${esc(notas.join(' | '))}',`);
     L.push('    respuestas: [');
     for (const r of [...ev.respuestas.values()]) {
-      L.push(`      { texto: T('${esc(r.texto)}'), efectos: [`);
+      const mjResp = r.minijuego ? `, minijuego: '${r.minijuego}'` : '';
+      L.push(`      { texto: T('${esc(r.texto)}')${mjResp}, efectos: [`);
       for (const ef of r.efectos) {
         const partes = [`peso: ${ef.peso}`];
+        if (ef.rama) partes.push(`rama: '${ef.rama}'`);
         if (ef.termina_partida) partes.push('termina_partida: true');
         if (ef.es_abandono) partes.push('es_abandono: true');
         partes.push(`texto: T('${esc(ef.texto)}')`);
@@ -393,6 +417,7 @@ function main() {
     }
     for (const [n, r] of e.respuestas) {
       const suma = r.efectos.reduce((s, ef) => s + ef.peso, 0);
+      if (r.minijuego) continue;   // las ramas de un duelo no son probabilidades
       if (r.efectos.length > 1 && suma !== 100) {
         avisos.push(`${e.codigo} resp ${n}: los pesos suman ${suma}, no 100 ` +
                     `(${r.efectos.map((ef) => ef.especial || '-').join(' / ')})`);

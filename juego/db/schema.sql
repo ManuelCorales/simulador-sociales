@@ -157,6 +157,10 @@ CREATE TABLE respuesta (
     texto_nb     TEXT NOT NULL,
     gesto        TEXT CHECK (gesto IS NULL OR gesto IN ('izq','der','arriba','abajo')),
     muestra_hint INTEGER NOT NULL DEFAULT 0,
+    -- Si está seteado, elegir esta respuesta no resuelve nada todavía: lanza
+    -- ese minijuego y el resultado decide cuál de sus efectos se aplica
+    -- (los marcados 'gana' o los marcados 'pierde').
+    minijuego_id INTEGER REFERENCES minijuego(id),
     UNIQUE (evento_id, orden)
 );
 
@@ -176,6 +180,9 @@ CREATE TABLE efecto (
     -- dentro de un evento normal.
     termina_partida    INTEGER NOT NULL DEFAULT 0,
     es_abandono        INTEGER NOT NULL DEFAULT 0,
+    -- Rama de un duelo: solo se aplica si la respuesta lanzó un minijuego y
+    -- el jugador lo ganó ('gana') o lo perdió ('pierde'). NULL = efecto normal.
+    rama_minijuego     TEXT CHECK (rama_minijuego IS NULL OR rama_minijuego IN ('gana','pierde')),
     CHECK (es_abandono = 0 OR termina_partida = 1)
 );
 
@@ -227,7 +234,8 @@ CREATE TABLE minijuego (
     ilustracion      TEXT,
     mecanica         TEXT NOT NULL CHECK (mecanica IN (
                        'tres_en_linea','memotest','traducir','sopa',
-                       'crucigrama','apellidos','conectar','molinete')),
+                       'crucigrama','apellidos','conectar','molinete',
+                     'simon')),
     instrucciones_m  TEXT,
     instrucciones_f  TEXT,
     instrucciones_nb TEXT,

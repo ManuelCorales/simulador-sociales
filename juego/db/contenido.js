@@ -350,6 +350,27 @@ const minijuegos = [
       { codigo: 'fallo',   min: 0,  max: 34,  texto: T('Te agarró seguridad en el primer molinete.'),                        stats: { guita: -4, fama: -3 } },
     ],
   },
+  // Duelo de baile contra el falso Michael Jackson. NO entra en el sorteo de
+  // los minijuegos por fase: `fases: []` lo deja fuera de la bolsa. Solo lo
+  // lanza la respuesta del evento que lo declara.
+  {
+    codigo: 'mj_simon', ilustracion: 'multitud', mecanica: 'simon',
+    nombre: 'Duelo de baile',
+    descripcion: 'Repetí los pasos. Uno más largo cada vez.',
+    instrucciones: T('Mirá la secuencia y repetila. Cada ronda suma un paso, hasta seis.'),
+    fases: [],
+    // umbralDuelo: puntaje a partir del cual la respuesta cuenta como ganada.
+    // En 100 hay que completar los seis pasos: es un duelo, se puede perder.
+    config: { pasos: 6, umbralDuelo: 100 },
+    // Los resultados no se usan cuando lo lanza una respuesta —el efecto lo
+    // pone el evento— pero quedan por si algún día entra a la bolsa.
+    resultados: [
+      { codigo: 'exito',   min: 100, max: 100, texto: T('Caminata lunar impecable.'), stats: { fama: 9 } },
+      { codigo: 'parcial', min: 50,  max: 99,  texto: T('Te trabaste a mitad de camino.'), stats: { fama: 2 } },
+      { codigo: 'fallo',   min: 0,   max: 49,  texto: T('Perdiste el ritmo en el primer paso.'), stats: { fama: -4 } },
+    ],
+  },
+
 ];
 
 // ---------------------------------------------------------------------------
