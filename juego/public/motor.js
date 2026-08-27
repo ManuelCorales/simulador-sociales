@@ -125,6 +125,7 @@ function crearMotor(C) {
       historia: [],               // log legible
       terminada: false,
       abandono: false,
+      cortada: false,   // termino antes de la ultima ronda
       finalId: null,
       creada: Date.now(),
     };
@@ -585,6 +586,10 @@ function crearMotor(C) {
     // ¿Termina la partida? Puede cortar el evento entero o solo este efecto
     // (así "dejás la carrera" es una respuesta más dentro de un evento normal).
     if (ev.termina_partida || efecto.termina_partida) {
+      // La partida se corta antes de tiempo. `abandono` es solo uno de los
+      // motivos: también están la muerte en el ataque armado y la expulsión,
+      // que terminan la carrera sin que el jugador la haya dejado.
+      estado.cortada = true;
       terminar(estado, { abandono: ev.tipo === 'abandono' || !!efecto.es_abandono });
       resultado.siguiente = 'final';
       return resultado;

@@ -12,7 +12,7 @@ const errores = [];
 const conteoFinales = {};
 const conteoEventos = {};
 const conteoMinijuegos = {};
-let abandonos = 0, avisosMostrados = 0, rondasTotales = 0;
+let abandonos = 0, cortadas = 0, avisosMostrados = 0, rondasTotales = 0;
 let maxRondas = 0, minRondas = 99;
 
 function check(cond, msg) { if (!cond) errores.push(msg); }
@@ -85,7 +85,12 @@ for (let i = 0; i < N; i++) {
   conteoFinales[final.final.codigo] = (conteoFinales[final.final.codigo] ?? 0) + 1;
 
   if (estado.abandono) abandonos++;
-  else {
+  if (estado.cortada) cortadas++;
+
+  // Una partida "completa" es la que llego a la ultima ronda. Las que se
+  // cortaron antes -abandono, muerte en el ataque armado, expulsion- no tienen
+  // por que haber jugado las 6 rondas ni los 3 minijuegos.
+  if (!estado.cortada) {
     check(rondasJugadas === motor.TOTAL_RONDAS,
       `Partida sin abandono jugó ${rondasJugadas} rondas (esperado ${motor.TOTAL_RONDAS})`);
     // La partida tiene dos slots de aviso, y cada aviso tiene que referenciar
@@ -97,7 +102,7 @@ for (let i = 0; i < N; i++) {
   avisosMostrados += avisosDeEstaPartida;
 
   check(minijuegosJugados <= 3, `Se jugaron ${minijuegosJugados} minijuegos`);
-  if (!estado.abandono) {
+  if (!estado.cortada) {
     check(minijuegosJugados === 3, `Partida completa con ${minijuegosJugados} minijuegos (esperado 3)`);
   }
 
@@ -131,6 +136,7 @@ const orden = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]);
 console.log(`\n=== ${N} partidas simuladas ===`);
 console.log(`Rondas por partida: min ${minRondas} / max ${maxRondas} / prom ${(rondasTotales / N).toFixed(2)}`);
 console.log(`Abandonos: ${abandonos} (${pct(abandonos)})`);
+console.log(`Partidas cortadas antes de la ultima ronda: ${cortadas} (${pct(cortadas)})`);
 console.log(`Avisos mostrados: ${avisosMostrados} (${(avisosMostrados / N).toFixed(2)} por partida)`);
 
 console.log('\nFinales:');

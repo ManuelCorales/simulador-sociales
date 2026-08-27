@@ -353,8 +353,10 @@ Está en `exportarImagen()` / `construirPlaca()` en `public/app.js`.
 
 ## Cómo funciona una partida
 
-**11 cartas: 6 eventos, 3 minijuegos y hasta 2 avisos.** Los stats arrancan al azar entre 24 y
-36 (rango en `configuracion`, claves `stats_iniciales_min` / `stats_iniciales_max`), así
+**9 cartas: 6 eventos y 3 minijuegos.** Los dos slots de aviso siguen configurados, pero
+hoy no hay avisos cargados y el motor los saltea, así que la partida son 9 cartas hasta
+que se escriban. Los stats arrancan al azar entre 40 y
+60 (rango en `configuracion`, claves `stats_iniciales_min` / `stats_iniciales_max`), así
 que cada partida empieza con un perfil distinto. `violencia` arranca siempre en 0, porque
 el secret ending mide escalada, no punto de partida.
 
@@ -417,7 +419,7 @@ condiciones de stats se cumplen, y si no hay ninguno, el final por defecto.
 ### Los finales por bandas
 
 Al terminar, cada stat cae en una banda de puntaje fija, igual para todos y definida de
-antemano: **BAJA 0-28, MEDIA 29-39, ALTA 40-100**. El final sale de la combinación de
+antemano: **BAJA 0-36, MEDIA 37-59, ALTA 60-100**. El final sale de la combinación de
 bandas — no importa el valor exacto ni cómo se comparan los stats entre sí.
 
 | Combinación | Final | Cuántos |
@@ -432,8 +434,8 @@ bandas — no importa el valor exacto ni cómo se comparan los stats entre sí.
 | Ninguna en alta, mezcla de baja y media | Graduado (default) | 1 |
 
 Como se evalúan por prioridad descendente y los tramos van de más altas a menos, **cada
-final declara solo sus altas**: *Consultor garca* pide únicamente `guita ≥ 40`, porque si
-además hubieras llegado a 40 en otro stat, la dupla o el trío ya habrían ganado antes.
+final declara solo sus altas**: *Consultor garca* pide únicamente `guita ≥ 60`, porque si
+además hubieras llegado a 60 en otro stat, la dupla o el trío ya habrían ganado antes.
 
 Los cortes salieron de medir 8000 partidas. Con la partida de 9 eventos eran 42 y 30; al
 bajar a 6 los stats se mueven menos y con esos cortes *Graduado* se disparaba al 14%, así

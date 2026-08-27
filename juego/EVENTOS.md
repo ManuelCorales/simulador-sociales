@@ -3,122 +3,121 @@
 Medido simulando **40 000 partidas con elecciones al azar**. El porcentaje es *en qué
 proporción de partidas aparece esa carta*, no cuántas veces sale en total.
 
-Regenerable: la cuenta está al pie de este archivo.
+Se regenera con el comando que está al pie.
 
 ## Cómo se eligen
 
 Cada ronda el motor arma una **bolsa** con todos los eventos que todavía no salieron y
-que pasan sus restricciones, y sortea uno **ponderado por su `peso`**. Se sortean 6 por
-partida sobre un catálogo de 38, así que si todos pesaran igual y ninguno tuviera
-restricciones, cada uno saldría en el **15,8%** de las partidas.
+que pasan sus restricciones, y sortea uno ponderado por su `peso`. Se sortean 6 por
+partida sobre un catálogo de 67, así que sin restricciones cada uno saldría en el
+**9,0%** de las partidas.
 
-Los pesos van de 100 a 140. Eso solo mueve la aguja unos pocos puntos: **lo que
-realmente decide es si el evento está atado a una fase.**
+Hoy **todos los eventos pesan 100**: el importador no lee peso del Excel porque el Excel
+no lo trae. Lo único que diferencia a un evento de otro es si está atado a una fase o a
+una ronda mínima.
 
 ---
 
-## Los 32 eventos sin restricción
+## Los 56 eventos sin restricción
 
-Compiten en las seis rondas. Salen entre 15,7% y 18,9%, y el orden lo da el peso.
+Compiten en las seis rondas y salen todos entre 9,4% y 10,1%: la diferencia es solo ruido del sorteo.
 
-| Sale en | Peso | Categoría | Evento |
+| Sale en | Evento |
+|---|---|
+| 10,1% | Inscripciones por el SIU |
+| 10,1% | Prácticas educativas |
+| 10,1% | Dejar una huella |
+| 10% | El que no para de hablar |
+| 10% | La marcha universitaria |
+| 10% | El porro antes del final |
+| 10% | La monografía que no pediste |
+| 9,9% | El fan de Charles Manson |
+| 9,9% | ¿Chorro o gil? |
+| 9,9% | El profesor en la calle |
+| 9,9% | Estás fusilado |
+| 9,9% | 8 horas por $200.000 |
+| 9,9% | El que vende los parciales |
+| 9,9% | El día de la expulsión |
+| 9,8% | El que pide plata |
+| 9,8% | ¿Dónde vas a estudiar? |
+| 9,8% | Trabajo de investigación |
+| 9,8% | El que no para de decir boludeces |
+| 9,8% | ¿Por qué siguen acumulando? |
+| 9,8% | ¿Era linda? |
+| 9,8% | Sumate a ser un Therian |
+| 9,8% | Las máquinas del kiosco |
+| 9,8% | La madriguera de los therians |
+| 9,8% | Parcial mañana, once de la noche |
+| 9,8% | Becas de trabajo en el comedor |
+| 9,8% | El autor del que nadie habla |
+| 9,8% | El pelado de teoría política |
+| 9,8% | El trámite imposible |
+| 9,8% | Los noteros |
+| 9,8% | El pucho de la salida |
+| 9,8% | Cuatro agrupaciones al hilo |
+| 9,7% | El último bondi |
+| 9,7% | Final a las cinco de la tarde |
+| 9,7% | El after y el Pity |
+| 9,7% | Michael Jackson en la puerta |
+| 9,7% | El médico te receta anteojos |
+| 9,7% | El argentino más importante |
+| 9,7% | Jueves de feria |
+| 9,7% | Turno noche en la hamburguesería |
+| 9,7% | El mega libro del titular |
+| 9,7% | Cuatro horas de teórico y una lija tremenda |
+| 9,7% | Vinieron a tapar los murales |
+| 9,7% | ¿Te anotás para hablar? |
+| 9,7% | ¿En cuál militás? |
+| 9,7% | El ejército de militantes |
+| 9,6% | La sala de radio |
+| 9,6% | ¿A qué hora ponés la alarma? |
+| 9,6% | El campamento anticapitalista |
+| 9,6% | Los rumores eran ciertos |
+| 9,6% | Hacer pasadas |
+| 9,5% | La jauría en el patio gay |
+| 9,5% | Llueve y hay mate en el buffet |
+| 9,5% | La plata de la nona |
+| 9,5% | Faltan fideos |
+| 9,4% | David Lynch en la plaza seca |
+| 9,4% | Clase muy embolante |
+
+---
+
+## Los 11 eventos atados a una fase o a una ronda
+
+Un evento limitado a una fase solo puede salir en **2 de las 6 rondas**, así que compite
+en un tercio de los sorteos y sale más o menos a un tercio de frecuencia.
+
+Los cinco con `ronda >= 4` son los que pueden **cortar la partida** (la muerte en el
+ataque armado, la expulsión, el abandono) más los que el PDF marcaba para la segunda
+mitad de la carrera. Se los corre a propósito: si salieran en la ronda 1, la partida
+podría terminar en la primera carta. Sin esa regla le pasaba al 1% de los jugadores.
+
+| Sale en | Evento | Limitación | Rondas |
 |---|---|---|---|
-| 18,9% | 120 | fama | El día de la expulsión |
-| 18,5% | 120 | generales | El último bondi |
-| 18,3% | 120 | generales | David Lynch en la plaza seca |
-| 18,2% | 115 | fama | Los noteros |
-| 18,1% | 115 | generales | Clase muy embolante |
-| 18,1% | 115 | fama | Vinieron a tapar los murales |
-| 18,1% | 115 | politica | El ejército de militantes |
-| 18% | 115 | guita | Turno noche en la hamburguesería |
-| 18% | 115 | fama | ¿Te anotás para hablar? |
-| 17,9% | 115 | generales | Final a las cinco de la tarde |
-| 17,9% | 115 | conocimiento | El autor del que nadie habla |
-| 17,6% | 115 | politica | Faltan fideos |
-| 17,4% | 110 | generales | ¿Por qué siguen acumulando? |
-| 17,4% | 110 | fama | Dejar una huella |
-| 17,3% | 110 | conocimiento | La monografía que no pediste |
-| 17,2% | 110 | generales | El que pide plata |
-| 17,1% | 110 | generales | Trabajo de investigación |
-| 17,1% | 110 | guita | La plata de la nona |
-| 17,1% | 110 | conocimiento | Cuatro horas de teórico y una lija tremenda |
-| 16,9% | 110 | conocimiento | El porro antes del final |
-| 16,8% | 105 | generales | El que no para de decir boludeces |
-| 16,8% | 105 | politica | Hacer pasadas |
-| 16,5% | 105 | generales | El after y el Pity |
-| 16,5% | 105 | guita | Prácticas educativas |
-| 16,5% | 105 | guita | 8 horas por $200.000 |
-| 16,5% | 105 | guita | Becas de trabajo en el comedor |
-| 16,4% | 105 | politica | Los rumores eran ciertos |
-| 16,4% | 105 | politica | Cuatro agrupaciones al hilo |
-| 16,2% | 105 | guita | El mega libro del titular |
-| 15,8% | 100 | generales | El fan de Charles Manson |
-| 15,7% | 100 | generales | La sala de radio |
-| 15,7% | 100 | fama | El pucho de la salida |
-
----
-
-## Los 6 eventos atados a una fase o a una ronda
-
-Acá está la distorsión grande. Un evento limitado a una fase solo puede salir en **2 de
-las 6 rondas**, así que compite en un tercio de los sorteos. El peso no lo compensa:
-*La beca y el despido* tiene el peso más alto del juego (140) y aun así sale menos que
-cualquier evento sin restricción.
-
-| Sale en | Peso | Categoría | Evento | Limitación | Rondas |
-|---|---|---|---|---|---|
-| 10,4% | 120 | guita | No alcanza para nada | ronda >= 4 | 4-6 |
-| 8,4% | 140 | guita | La beca y el despido | fase avanzado | 5-6 |
-| 7% | 130 | guita | La campaña del candidato | fase intermedio | 3-4 |
-| 7% | 125 | conocimiento | La bicicleta al costado de las vías | fase intermedio | 3-4 |
-| 6,8% | 130 | politica | ¿En cuál militás? | fase ingresante | 1-2 |
-| 5,8% | 110 | generales | ¿Dónde vas a estudiar? | fase ingresante | 1-2 |
+| 6,7% | La campaña del candidato | ronda >= 3 | 3-6 |
+| 6,6% | La bicicleta al costado de las vías | ronda >= 3 | 3-6 |
+| 5,1% | La reunión con el director | ronda >= 4 | 4-6 |
+| 5% | Entra un grupo armado | ronda >= 4 | 4-6 |
+| 5% | No alcanza para nada | ronda >= 4 | 4-6 |
+| 3,3% | La beca y el despido | fase avanzado | 5-6 |
+| 3,3% | La revolución social tiene que llegar | fase ingresante | 1-2 |
+| 3,3% | La juntada intelectual | fase ingresante | 1-2 |
+| 3,3% | La interna por el movimiento | fase intermedio | 3-4 |
+| 3,3% | ¿A quién promocionás? | fase avanzado | 5-6 |
+| 3,2% | Protesta en la puerta de OLGA | fase ingresante | 1-2 |
 
 ---
 
 ## Avisos
 
-Los avisos no salen de la bolsa: aparecen en los dos slots fijos de la partida y se
-eligen según **qué decisiones tomaste**. Los de familia cubren cualquier respuesta según
-cuál fue su cambio de stat más grande; los cuatro *propios* están escritos para una
-respuesta puntual.
+**No hay avisos cargados.** Los 13 que había se borraron junto con los eventos viejos.
+Los dos slots de la partida siguen configurados en `configuracion.avisos_en_rondas`, y
+el motor los saltea cuando no encuentra ninguno, así que hoy la partida son 9 cartas:
+6 eventos y 3 minijuegos.
 
-| Sale en | Aviso | Tipo |
-|---|---|---|
-| 45,3% | Mail de dos líneas | familia |
-| 34,9% | Te escribieron | familia |
-| 25,8% | Se corrió la bola | familia |
-| 24,2% | Te devolvieron el parcial | familia |
-| 19,5% | Llamada de tu vieja | familia |
-| 15,7% | Te citaron | familia |
-| 12,1% | Salió una historia | familia |
-| 9,8% | Figurás con deuda | familia |
-| 4,2% | av_pity | **propio** |
-| 2,6% | av_linchamiento | **propio** |
-| 2,4% | Dejaron de hablar | familia |
-| 1,4% | av_grupo_investigacion | **propio** |
-| 0,4% | av_campania | **propio** |
-
----
-
-## Tres cosas que saltan de estos números
-
-**La carta de apertura casi no se ve.** *¿Dónde vas a estudiar?* es temáticamente el
-evento con el que arranca una carrera y sale en el 5,8% de las partidas: está atado a
-la fase ingresante, que ahora son dos rondas, y compite contra 33 eventos más. Si
-querés que sea la bienvenida, hay que forzarlo en la ronda 1 en vez de dejarlo al
-sorteo.
-
-**Los cuatro avisos escritos a mano casi no aparecen.** *av_campania* sale en el 0,4% de
-las partidas y *av_grupo_investigacion* en el 1,4%, porque dependen de pegarle a una
-respuesta concreta de un evento que ya de por sí sale una de cada seis veces. Los de
-familia se llevan todo el trabajo. Si el aviso propio te importa, conviene subirle el
-peso al evento que lo dispara o escribir avisos propios para más respuestas.
-
-**Los pesos están haciendo muy poco.** Entre el evento más pesado sin restricción (120)
-y el más liviano (100) hay 3 puntos de diferencia en la práctica: 18,9% contra 15,7%.
-Si querés que algunas cartas se sientan claramente más frecuentes que otras, el rango
-de pesos tiene que ser mucho más ancho.
+Para volver a tenerlos alcanza con llenar `avisosDeFamilia` en `db/contenido.js`: el
+seed les asigna solo un aviso a cada efecto según cuál fue su cambio de stat más grande.
 
 ---
 
@@ -135,6 +134,6 @@ for(let i=0;i<N;i++){
     m.responder(e,p.respuestas[Math.floor(Math.random()*p.respuestas.length)].id);}
   v.forEach(x=>c[x]=(c[x]??0)+1);}
 Object.entries(c).sort((a,b)=>b[1]-a[1])
-  .forEach(([k,v])=>console.log(k.padEnd(26)+(v/N*100).toFixed(1)+'%'));
+  .forEach(([k,v])=>console.log(k.padEnd(36)+(v/N*100).toFixed(1)+'%'));
 "
 ```

@@ -46,8 +46,8 @@ const insConf = db.prepare('INSERT INTO configuracion (clave, valor, descripcion
 insConf.run('total_rondas', '6', 'Eventos de una partida completa. Con 3 minijuegos y hasta 2 avisos dan 11 cartas.');
 insConf.run('minijuegos_por_partida', '3', 'Uno por fase, no consumen ronda');
 insConf.run('avisos_en_rondas', '2,4', 'Slots de aviso obligatorio. Cartas extra, no consumen ronda.');
-insConf.run('stats_iniciales_min', '24', 'Piso del sorteo de stats al empezar');
-insConf.run('stats_iniciales_max', '36', 'Techo del sorteo de stats al empezar');
+insConf.run('stats_iniciales_min', '40', 'Piso del sorteo de stats al empezar');
+insConf.run('stats_iniciales_max', '60', 'Techo del sorteo de stats al empezar');
 insConf.run('version_contenido', '0.1.0', 'Version del set de contenido cargado');
 
 // ---------------------------------------------------------------------
@@ -332,9 +332,21 @@ const statsInexistentes = db.prepare(
   'SELECT COUNT(*) c FROM efecto_stat es LEFT JOIN stat s ON s.id=es.stat_id WHERE s.id IS NULL').get().c;
 
 const errores = [];
+
+// Catálogo vacío: es un estado esperado entre que se borran los eventos viejos
+// y se cargan los nuevos. Se avisa claro en vez de disparar cinco errores
+// derivados que no dicen nada.
+const CATALOGO_VACIO = C.eventos.length === 0;
+if (CATALOGO_VACIO) {
+  console.log('\n  ATENCION: no hay eventos cargados.');
+  console.log('  La base queda armada (stats, fases, minijuegos, finales) pero el juego');
+  console.log('  no puede armar una partida. Cargá los eventos con:\n');
+  console.log('      node db/importar-excel.js\n');
+}
+
 if (evInvalidos.length) errores.push(`Eventos inválidos: ${JSON.stringify(evInvalidos)}`);
 if (respInvalidas.length) errores.push(`Respuestas inválidas: ${JSON.stringify(respInvalidas)}`);
-if (abandono !== 1) errores.push(`Debe haber exactamente 1 efecto que deje la carrera (hay ${abandono})`);
+if (!CATALOGO_VACIO && abandono !== 1) errores.push(`Debe haber exactamente 1 efecto que deje la carrera (hay ${abandono})`);
 if (finalDefault !== 1) errores.push(`Debe haber exactamente 1 final por defecto (hay ${finalDefault})`);
 if (statsInexistentes) errores.push(`${statsInexistentes} efecto_stat apuntan a stats inexistentes`);
 
