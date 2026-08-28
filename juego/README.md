@@ -277,7 +277,7 @@ entre los ocho — ninguno se repite dentro de la misma partida.
 | `apellidos` | Escribir bien los apellidos | Se muestra «Bordié», hay que escribir Bourdieu | aciertos / 4 |
 | `conectar` | El mapa conceptual | Unir 9 puntos en orden | 100 menos 14 por error |
 | `molinete` | Saltar el molinete | Corredor tipo dino: clic o barra para saltar | molinetes pasados / 10 |
-| `simon` | Duelo de baile | Simon Dice: repetí la secuencia, un paso más por ronda hasta seis | completar los seis = 100; si te trabás, rondas hechas / 6 |
+| `simon` | Duelo de baile | Simon Dice: se muestran los seis pasos de una y hay que repetirlos todos seguidos | los seis = 100; si te trabás, pasos acertados / 6 |
 
 En el memo test el tope de 5 se cuenta en **fallos**, no en jugadas: con 6 pares hacen
 falta 6 jugadas para ganar aunque tengas memoria perfecta, así que un tope de 5 jugadas
@@ -385,7 +385,8 @@ minijuego y **el resultado decide cuál de los efectos se aplica**, entre los ma
 config del minijuego.
 
 Hoy lo usa un solo evento: el duelo de baile contra el falso Michael Jackson, que se juega
-con Simon Dice y pide los seis pasos completos para ganar. Sale en el 5% de las partidas.
+con Simon Dice: la secuencia de seis se muestra una sola vez, entera, y hay que repetirla
+completa. Un error corta el duelo. Sale en el 5% de las partidas.
 
 `mj_simon` tiene `fases: []`, así que **no entra en el sorteo de los minijuegos por fase**:
 solo lo lanza la respuesta que lo declara.

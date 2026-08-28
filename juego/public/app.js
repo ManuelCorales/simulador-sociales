@@ -1071,19 +1071,15 @@ const MECANICAS = {
     estado(`Molinetes: 0/${TOTAL}`);
     requestAnimationFrame(paso);
   },
-  // --- 9. Simon Dice: repetir la secuencia, un paso más por ronda ---
+  // --- 9. Simon Dice: la secuencia entera de una, y se repite completa ---
   simon(cfg, listo) {
     const PASOS = cfg.pasos ?? 6;
-    // Cuatro pads con los colores de la paleta. El nombre es para el title.
     const PADS = [
-      { color: 'var(--amarillo)', nombre: 'arriba izquierda' },
-      { color: 'var(--naranja)',  nombre: 'arriba derecha' },
+      { color: 'var(--amarillo)',   nombre: 'arriba izquierda' },
+      { color: 'var(--naranja)',    nombre: 'arriba derecha' },
       { color: 'var(--azul-medio)', nombre: 'abajo izquierda' },
-      { color: 'var(--verde)',    nombre: 'abajo derecha' },
+      { color: 'var(--verde)',      nombre: 'abajo derecha' },
     ];
-
-    // La secuencia completa se sortea una sola vez: cada ronda muestra un paso
-    // más de la MISMA secuencia, como el Simon de verdad.
     const secuencia = Array.from({ length: PASOS }, () => Math.floor(Math.random() * 4));
 
     const a = area();
@@ -1100,24 +1096,26 @@ const MECANICAS = {
     });
     a.appendChild(grilla);
 
-    let ronda = 1, paso = 0, bloqueado = true, cerrado = false;
-    const marcador = () => estado(`Paso ${ronda} de ${PASOS}`);
+    let paso = 0, bloqueado = true, cerrado = false;
 
     const encender = (i, ms) => new Promise((r) => {
       pads[i].classList.add('on');
-      setTimeout(() => { pads[i].classList.remove('on'); setTimeout(r, 130); }, ms);
+      setTimeout(() => { pads[i].classList.remove('on'); setTimeout(r, 170); }, ms);
     });
 
+    // Un solo pase con los seis pasos. Va parejo y sin apuro: hay que
+    // memorizarlos todos de una, así que acelerar sobre el final lo volvería
+    // imposible en vez de difícil.
     async function mostrar() {
       bloqueado = true;
-      estado(`Mirá... (${ronda} de ${PASOS})`);
-      await new Promise((r) => setTimeout(r, 500));
-      // Se acelera de a poco: al final hay que estar atento de verdad.
-      const ms = Math.max(240, 460 - ronda * 30);
-      for (let k = 0; k < ronda; k++) await encender(secuencia[k], ms);
-      paso = 0;
+      estado('Mirá los seis pasos...');
+      await new Promise((r) => setTimeout(r, 700));
+      for (let k = 0; k < PASOS; k++) {
+        estado(`Mirá... ${k + 1} de ${PASOS}`);
+        await encender(secuencia[k], 480);
+      }
       bloqueado = false;
-      estado(`Repetí (${ronda} de ${PASOS})`);
+      estado(`Ahora repetilos: 0 de ${PASOS}`);
     }
 
     function cerrar(puntos, texto) {
@@ -1128,23 +1126,20 @@ const MECANICAS = {
       setTimeout(() => listo(limitar(puntos)), 700);
     }
 
-    async function tocar(i) {
+    function tocar(i) {
       if (bloqueado || cerrado) return;
       pads[i].classList.add('on');
       setTimeout(() => pads[i].classList.remove('on'), 140);
 
+      // Un error corta el duelo. Puntúa por los pasos que sí acertó: trabarse
+      // en el quinto no es lo mismo que en el primero.
       if (i !== secuencia[paso]) {
-        // Puntúa por las rondas completas: perder en el paso 5 no es lo mismo
-        // que perder en el primero.
-        return cerrar(((ronda - 1) / PASOS) * 100, `Perdiste el ritmo en el paso ${ronda}.`);
+        return cerrar((paso / PASOS) * 100, `Te trabaste en el paso ${paso + 1}.`);
       }
-      paso++;
-      if (paso < ronda) return;
 
-      if (ronda === PASOS) return cerrar(100, 'Los seis pasos, clavados.');
-      ronda++;
-      marcador();
-      setTimeout(mostrar, 400);
+      paso++;
+      if (paso === PASOS) return cerrar(100, 'Los seis pasos, clavados.');
+      estado(`Ahora repetilos: ${paso} de ${PASOS}`);
     }
 
     mostrar();
@@ -1368,7 +1363,7 @@ async function exportarImagen() {
 
     // En celular abre el menú de compartir; en escritorio descarga.
     if (navigator.canShare?.({ files: [archivo] })) {
-      await navigator.share({ files: [archivo], title: 'FSOQUER', text: ultimoFinal.final.titulo });
+      await navigator.share({ files: [archivo], title: 'FSOQUER' });
       btn.textContent = original;
     } else {
       descargar(blob, nombre);

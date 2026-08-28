@@ -356,11 +356,11 @@ const minijuegos = [
   {
     codigo: 'mj_simon', ilustracion: 'multitud', mecanica: 'simon',
     nombre: 'Duelo de baile',
-    descripcion: 'Repetí los pasos. Uno más largo cada vez.',
-    instrucciones: T('Mirá la secuencia y repetila. Cada ronda suma un paso, hasta seis.'),
+    descripcion: 'Seis pasos de una. Repetilos todos seguidos.',
+    instrucciones: T('Te muestro los seis pasos una sola vez. Después repetilos en orden, sin equivocarte.'),
     fases: [],
-    // umbralDuelo: puntaje a partir del cual la respuesta cuenta como ganada.
-    // En 100 hay que completar los seis pasos: es un duelo, se puede perder.
+    // La secuencia se muestra entera una sola vez y hay que repetirla completa.
+    // umbralDuelo en 100: un solo error y perdiste el duelo.
     config: { pasos: 6, umbralDuelo: 100 },
     // Los resultados no se usan cuando lo lanza una respuesta —el efecto lo
     // pone el evento— pero quedan por si algún día entra a la bolsa.
