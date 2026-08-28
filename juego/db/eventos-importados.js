@@ -2,7 +2,7 @@
 //  GENERADO POR db/importar-excel.js — no editar a mano.
 //  Fuente: eventos-pdf.xlsx. Para cambiar algo, cambialo en el Excel
 //  y volvé a correr el importador.
-//  Generado: 2026-08-27
+//  Generado: 2026-08-28
 // =====================================================================
 
 const T = (s) => ({ m: s, f: s, nb: s });
@@ -419,14 +419,14 @@ const eventosImportados = [
     texto: T('Te invitan a participar del campamento anticapitalista.'),
     notas_autor: 'PDF: Generales 26',
     respuestas: [
-      { texto: T('No curtís con esa. Te parece una gilada.'), efectos: [
+      { texto: T('No curtís con esa.'), efectos: [
         { peso: 100, texto: T('Les cortaste el rostro y no los dejaste hablar.'), stats: { fama: -12, politica: -12 } },
       ]},
       { texto: T('¡Oh sí! Me encantan los campamentos.'), efectos: [
-        { peso: 100, texto: T('Fuiste, escuchaste Justin Bieber, hiciste tiktoks, te metiste a una pelopincho y escuchaste ochenta y tres veces "el capitalismo no da más".'), stats: { conocimiento: -12, fama: 12 } },
+        { peso: 100, texto: T('Fuiste, hiciste Tiktoks, mojaste las patas en una pelopincho, y escuchaste ochenta y tres razones por las que el capitalismo no va más.'), stats: { conocimiento: -12, fama: 12 } },
       ]},
-      { texto: T('Vas solamente como infiltrado para escribir una crónica.'), efectos: [
-        { peso: 100, texto: T('Viste la dinámica y te pareció dudoso el ímpetu del movimiento. Todos los militantes parecían cyborgs que repetían un mismo discurso sin cesar. Casi ninguno había leído a Marx. Escribiste la crónica e investigaste: encontraste una relación entre la agrupación y el Mossad. Pero te aburriste y te levantaste tres cyborgs minubis.'), stats: { conocimiento: 22, politica: -12 } },
+      { texto: T('Vas escéptico para hacer un poco de observación participante'), efectos: [
+        { peso: 100, texto: T('Viste la dinámica y te pareció dudoso el ímpetu del movimiento. Todos los militantes parecían cyborgs. Investigaste más y encontraste una relación entre la agrupación y el Mossad pero te enamoraste de unx cyborg anticapitalista. Van a tener hijes anticapitalistas.'), stats: { conocimiento: 22, politica: -12 } },
       ]},
     ],
   },
@@ -935,8 +935,8 @@ const eventosImportados = [
     texto: T('Te invitan a militar en diferentes agrupaciones.'),
     notas_autor: 'PDF: Política 1',
     respuestas: [
-      { texto: T('Variante Universitaria.'), efectos: [
-        { peso: 100, texto: T('Te sumaste a Variante Universitaria.'), stats: { guita: 12, politica: 12 } },
+      { texto: T('Alternativa Ariemica.'), efectos: [
+        { peso: 100, texto: T('Te sumaste a Alternativa Ariemica'), stats: { guita: 12, politica: 12 } },
       ]},
       { texto: T('La UElla.'), efectos: [
         { peso: 100, texto: T('Te sumaste a La UElla.'), stats: { fama: 12, politica: 12 } },
