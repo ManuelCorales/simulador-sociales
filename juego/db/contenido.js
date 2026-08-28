@@ -457,7 +457,7 @@ const finales = [
   // --- Tres en alta: el trío se nombra por el que falta ---
   {
     codigo: 'fin_sin_guita', ilustracion: 'comida', prioridad: 903,
-    titulo: G('Prócer sin sueldo', 'Prócera sin sueldo', 'Prócere sin sueldo'),
+    titulo: G('Prócer sin sueldo', 'Prócera sin sueldo', 'Prócer sin sueldo'),
     texto: T('Sabés, te ubican y movés. Lo único que no aparece nunca es la plata. Diste catorce charlas este año, todas gratis, y llegás a fin de mes con lo que te presta tu vieja. Te dicen que sos un ejemplo y vos calculás cuánto sale el bondi.'),
     cond: altas('conocimiento', 'fama', 'politica'),
   },
