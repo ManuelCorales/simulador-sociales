@@ -719,7 +719,7 @@ const eventosImportados = [
     respuestas: [
       { texto: T('Fumar.'), efectos: [
         { peso: 50, texto: T('Te relaja y potencia tus conocimientos. Al otro día entrás a rendir relajado e imparable.'), stats: { conocimiento: 22 } },
-        { peso: 50, texto: T('Pegó mal y terminás vomitando. Quedaste de cama toda la noche recordando a tu ex. Al otro día en el examen no pensás en otra cosa más que en cuando salían a tomar helado.'), stats: { conocimiento: 22 } },
+        { peso: 50, texto: T('Pegó mal y terminás vomitando. Quedaste de cama toda la noche recordando a tu ex. Al otro día en el examen no pensás en otra cosa más que en cuando salían a tomar helado.'), stats: { conocimiento: -22 } },
       ]},
       { texto: T('Vas a la segura y lidiás con los nervios a la antigua.'), efectos: [
         { peso: 50, texto: T('Al otro día no te va tan bien por el cagazo. Aprobás pero vas a final.'), stats: { conocimiento: -12 } },
@@ -1027,7 +1027,7 @@ const eventosImportados = [
       { texto: T('No comprás ni ahí.'), efectos: [
         { peso: 100, texto: T('No compraste.'), stats: { conocimiento: 12, fama: -12, politica: -12 } },
       ]},
-      { texto: T('Accedés a hacer las pasadas.'), efectos: [
+      { texto: T('Accedes pero sin muchas ganas'), efectos: [
         { peso: 100, texto: T('A la tercera pasada te confiesa que le chupa un huevo. Pela un porro y van a la plaza seca a escuchar a Los Redondos. Te revela que en realidad era Duki Green Son.'), stats: { fama: 12, politica: -12 } },
       ]},
     ],
