@@ -333,9 +333,9 @@ const minijuegos = [
     // derrota lisa y llana, sin importar cuántos llegaste a unir.
     config: { puntos: 9, segundos: 15 },
     resultados: [
-      { codigo: 'exito',   min: 80, max: 100, texto: T('Quedó un mapa que hasta la cátedra te copió.'), stats: { conocimiento: 8, fama: 3 } },
+      { codigo: 'exito',   min: 80, max: 100, texto: T('Te lo copia la cátedra.'), stats: { conocimiento: 8, fama: 3 } },
       { codigo: 'parcial', min: 40, max: 79,  texto: T('Se entiende si lo explicás vos al lado.'),      stats: { conocimiento: 4 } },
-      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Parece una telaraña dibujada con el codo.'),    stats: { conocimiento: -2, fama: -2 } },
+      { codigo: 'fallo',   min: 0,  max: 39,  texto: T('Parece dibujado con el codo.'),    stats: { conocimiento: -2, fama: -2 } },
     ],
   },
 
