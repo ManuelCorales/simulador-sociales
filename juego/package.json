@@ -7,7 +7,8 @@
     "seed": "node --no-warnings db/seed.js",
     "build": "node --no-warnings db/seed.js && node --no-warnings build.js",
     "start": "node --no-warnings server.js",
-    "test:run": "node --no-warnings test/simular.js"
+    "test:run": "node --no-warnings test/simular.js",
+    "publicar": "npm run build && node --no-warnings publicar.js"
   },
   "optionalDependencies": {
     "better-sqlite3": "^11.0.0"

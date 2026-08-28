@@ -47,6 +47,27 @@ Al deploy suben nueve archivos: los siete de `public/`, `vercel.json` y `.gitign
 
 **GitHub Pages** — Settings → Pages → carpeta `/public` de la rama principal.
 
+### Publicado en helechosocial.com.ar/simulador
+
+El juego vive dentro del sitio de Helecho Social, que es otro repo
+(`camiloromano227/HelechoSocial`) y otro deploy de Vercel. Ahí adentro, la carpeta
+`simulador/` tiene **solo los siete archivos de `public/`**, nada más: en un sitio estático
+todo lo que esté en el repo queda descargable, y no hace falta publicar la base, los tests
+ni las planillas.
+
+```bash
+npm run publicar        # hace el build y copia public/ a ../../../HelechoSocial/simulador
+```
+
+Después hay que commitear y pushear ese otro repo.
+
+**El sitio necesita `trailingSlash: true` en su `vercel.json`**, y no es un detalle
+cosmético. El juego usa rutas relativas (`src="motor.js"`, `fetch('contenido.json')`) y el
+navegador las resuelve contra el directorio de la URL actual. En `/simulador` **sin** barra
+final, el directorio es la raíz del sitio, así que pide `/motor.js` y recibe un 404: la
+página carga en blanco. Con `trailingSlash`, Vercel redirige a `/simulador/` y todo resuelve
+donde tiene que resolver.
+
 `public/contenido.json` **se commitea a propósito**: es el contenido publicado.
 Cada vez que edites `db/contenido.js`, corré `npm run build` y commiteá el JSON
 junto con el cambio. La base (`db/game.db`) sí está en `.gitignore`, porque se
@@ -156,6 +177,7 @@ db/
   cargar.js      lee game.db a un objeto plano
   conn.js        capa fina: better-sqlite3 o node:sqlite, lo que haya
 build.js         vuelca la base a public/contenido.json
+publicar.js      copia public/ al sitio de Helecho Social
 server.js        servidor estático de desarrollo, sin dependencias
 engine.js        el motor para Node (3 líneas: motor + contenido de SQLite)
 
