@@ -956,7 +956,7 @@ const eventosImportados = [
     notas_autor: 'PDF: Política 2',
     respuestas: [
       { texto: T('Lo salís a bancar y cubrís el costo a medias con él. Es por una buena causa.'), efectos: [
-        { peso: 70, texto: T('Te quedás sin plata para cargar la SUBE. Vas a tener que saltar el molinete y correr. Quedás como el héroe de la gente y de tu amigo.'), stats: { guita: 12, fama: 12, politica: 12 } },
+        { peso: 70, texto: T('Te quedás sin plata para cargar la SUBE. Vas a tener que saltar el molinete y correr. Quedás como el héroe de la gente y de tu amigo.'), stats: { fama: 12, politica: 12 } },
         { peso: 30, texto: T('Caés detenido y salís en un spot publicitario de las fuerzas de seguridad de José Blackri.'), stats: { guita: -12, fama: -12 } },
       ]},
       { texto: T('Donde comen dos comen tres. Proponés repartir porciones más chicas pero comen todos.'), efectos: [

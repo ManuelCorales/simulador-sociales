@@ -1344,11 +1344,21 @@ async function construirPlaca() {
   ctx.font = '13px "Press Start 2P", monospace';
   ctx.fillStyle = NEGRO;
   ctx.fillText('FSOQUER', px + textoX, y + 10);
+
+  // El nombre va del mismo cuerpo que FSOQUER y comparte línea de base. Como
+  // lo escribe el jugador, se achica si no entra: el ancho disponible es lo que
+  // queda entre "FSOQUER" y el margen derecho.
   ctx.textAlign = 'right';
-  ctx.font = '8px "Press Start 2P", monospace';
   ctx.fillStyle = '#6B6B63';
   const pie = nombreJugador ? nombreJugador.toUpperCase() : `${p.totalRondas} RONDAS`;
-  ctx.fillText(pie, px + pw - textoX, y + 9);
+  const disponible = pw - textoX * 2 - ctx.measureText('FSOQUER').width - 20;
+  let cuerpo = 13;
+  do {
+    ctx.font = `${cuerpo}px "Press Start 2P", monospace`;
+    if (ctx.measureText(pie).width <= disponible) break;
+    cuerpo -= 0.5;
+  } while (cuerpo > 6);
+  ctx.fillText(pie, px + pw - textoX, y + 10);
 
   return cv;
 }
