@@ -888,8 +888,19 @@ const MECANICAS = {
     linea.setAttribute('points', '');
     svg.appendChild(linea);
 
-    let siguiente = 0, errores = 0;
-    const marcar = () => estado(`Punto ${siguiente} de ${n}${errores ? ` · ${errores} errores` : ''}`);
+    let siguiente = 0, errores = 0, terminado = false;
+    // Devuelve el texto en vez de pintarlo: el reloj le pega los segundos.
+    const marcar = () => `Punto ${siguiente} de ${n}${errores ? ` · ${errores} errores` : ''}`;
+
+    // Sin tiempo no lo completaste, y no completarlo es perder: puntaje 0, sin
+    // importar cuántos puntos hayas llegado a unir.
+    const sinTiempo = () => {
+      if (terminado) return;
+      terminado = true;
+      estado(`Se acabó el tiempo en el punto ${siguiente} de ${n}.`);
+      setTimeout(() => listo(0), 700);
+    };
+    const cronometro = reloj(cfg.segundos ?? 15, marcar, sinTiempo);
 
     pos.forEach((p, i) => {
       const g = document.createElementNS(ns, 'g');
@@ -902,23 +913,27 @@ const MECANICAS = {
       t.textContent = i + 1;
       g.appendChild(c); g.appendChild(t);
       g.addEventListener('click', () => {
+        if (terminado) return;
         if (i !== siguiente) {
           errores++;
           g.classList.add('error');
           setTimeout(() => g.classList.remove('error'), 260);
-          marcar();
+          cronometro.refrescar();
           return;
         }
         g.classList.add('hecho');
         siguiente++;
         linea.setAttribute('points',
           pos.slice(0, siguiente).map((q) => `${q.x},${q.y}`).join(' '));
-        marcar();
-        if (siguiente === n) setTimeout(() => listo(limitar(100 - errores * 14)), 450);
+        cronometro.refrescar();
+        if (siguiente === n) {
+          terminado = true;
+          cronometro.parar();
+          setTimeout(() => listo(limitar(100 - errores * 14)), 450);
+        }
       });
       svg.appendChild(g);
     });
-    marcar();
   },
 
   // --- 8. Saltar el molinete: corredor tipo dino ---

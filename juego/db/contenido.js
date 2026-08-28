@@ -329,7 +329,9 @@ const minijuegos = [
     descripcion: 'Unir los puntos antes de que te toque exponer.',
     instrucciones: T('Clickeá los puntos en orden, del 1 al último.'),
     fases: ['ingresante', 'intermedio', 'avanzado'],
-    config: { puntos: 9 },
+    // 15 segundos para unir los nueve puntos. Si se acaba el tiempo es
+    // derrota lisa y llana, sin importar cuántos llegaste a unir.
+    config: { puntos: 9, segundos: 15 },
     resultados: [
       { codigo: 'exito',   min: 80, max: 100, texto: T('Quedó un mapa que hasta la cátedra te copió.'), stats: { conocimiento: 8, fama: 3 } },
       { codigo: 'parcial', min: 40, max: 79,  texto: T('Se entiende si lo explicás vos al lado.'),      stats: { conocimiento: 4 } },

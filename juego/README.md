@@ -275,7 +275,7 @@ entre los ocho — ninguno se repite dentro de la misma partida.
 | `sopa` | Sopa de letras de la cátedra | Grilla 10x10, clic en la primera y la última letra. Horizontal, vertical y **las dos diagonales** | halladas / 3, **60s** |
 | `crucigrama` | Parcial contrarreloj | 3 palabras que se cruzan, una letra por casillero | letras correctas, **60s** |
 | `apellidos` | Escribir bien los apellidos | Se muestra «Bordié», hay que escribir Bourdieu | aciertos / 4 |
-| `conectar` | El mapa conceptual | Unir 9 puntos en orden | 100 menos 14 por error |
+| `conectar` | El mapa conceptual | Unir los 9 puntos en orden, **15s** | 100 menos 14 por error; si se acaba el tiempo, 0 |
 | `molinete` | Saltar el molinete | Corredor tipo dino: clic o barra para saltar | molinetes pasados / 10 |
 | `simon` | Duelo de baile | Simon Dice: se muestran los seis pasos de una y hay que repetirlos todos seguidos | los seis = 100; si te trabás, pasos acertados / 6 |
 
@@ -289,10 +289,15 @@ o hacia abajo: se leen siempre en su sentido normal y la dificultad está en enc
 no en leerlas al revés. Medido sobre 3000 grillas, el 42% de las palabras cae en diagonal
 y ninguna grilla queda con palabras listadas que no estén puestas.
 
-**Sopa y crucigrama llevan reloj** porque son los únicos que se pueden no resolver: sin
-límite de tiempo, alguien que no encuentra las palabras queda trabado en la pantalla para
-siempre. Al vencer se entrega lo que haya, que es justo lo que dice el mensaje de fallo
-del parcial.
+**Tres minijuegos llevan reloj**, y no todos lo usan igual:
+
+- **Sopa (60s) y crucigrama (45s)**: son los que se pueden no resolver, y sin límite alguien
+  que no encuentra las palabras queda trabado en la pantalla para siempre. Al vencer se
+  entrega lo que haya, que es justo lo que dice el mensaje de fallo del parcial.
+- **Mapa conceptual (15s)**: acá el reloj no es una red de contención sino la dificultad
+  misma. Unir los nueve puntos es fácil; hacerlo en quince segundos, no. Si se acaba el
+  tiempo **el puntaje es 0**, sin importar cuántos puntos hayas llegado a unir: no
+  completarlo es perder.
 
 ### Pixel art
 
