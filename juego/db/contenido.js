@@ -565,7 +565,7 @@ const finales = [
   },
   {
     codigo: 'fin_politica', ilustracion: 'afiche', prioridad: 700,
-    titulo: G('Puntero con unidad básica', 'Puntera con unidad básica', 'Punterr con unidad básica'),
+    titulo: G('Puntero con unidad básica', 'Puntera con unidad básica', 'Puntere con unidad básica'),
     texto: T('Tenés una unidad básica con tu nombre y llegaste a ser asesor de un legislador más boludo que vos. Lo importante es que nunca perdiste la fe ni las ganas de cambiar el mundo.'),
     cond: altas('politica'),
   },
